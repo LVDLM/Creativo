@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: challenges
+    // Fields: id, title, description, example, category
+    //
+    // Collection: publications
+    // Fields: id, challengeId, authorId, authorName, content, createdAt, isModerated
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidPublication(data) {
+      return data.keys().hasAll(['id', 'challengeId', 'authorId', 'content', 'createdAt']) &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
+             data.authorName is string && data.authorName.size() < 100 &&
+             data.challengeId is string;
+    }
+
+    // Challenges are read-only for users
+    match /challenges/{challengeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Publications
+    match /publications/{pubId} {
+      // Only moderated publications are publicly readable
+      allow read: if resource.data.isModerated == true || isOwner(resource.data.authorId);
+      
+      // Users can create their own publications
+      allow create: if isAuthenticated() && 
+                      request.resource.data.authorId == request.auth.uid &&
+                      isValidPublication(request.resource.data);
+                      
+      // Users can delete their own publications
+      allow delete: if isOwner(resource.data.authorId);
+      
+      // Updates are restricted (e.g., moderation status is handled by server/AI)
+      // For this demo, we'll allow the user to set isModerated if they pass the client-side check
+      // but in a real app this would be a cloud function.
+      allow update: if isOwner(resource.data.authorId) && 
+                      isValidPublication(request.resource.data) &&
+                      request.resource.data.authorId == resource.data.authorId;
+    }
+  }
+}

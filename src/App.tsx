@@ -1,0 +1,590 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  collection, 
+  addDoc, 
+  query, 
+  where,
+  orderBy, 
+  onSnapshot, 
+  serverTimestamp,
+  doc,
+  getDocFromServer
+} from 'firebase/firestore';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth, db, loginWithGoogle, logout } from './firebase';
+import { CHALLENGES, PONTE_SUB_PROMPTS } from './constants';
+import { Challenge, Publication, OperationType, FirestoreErrorInfo } from './types';
+import { MicroStoryLab } from './components/MicroStoryLab';
+import { WeatherActionLab } from './components/WeatherActionLab';
+import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
+import { WritingArea } from './components/WritingArea';
+import { 
+  Zap, 
+  Bus, 
+  Train, 
+  Type, 
+  Minimize2, 
+  Layers, 
+  Shuffle, 
+  PenTool, 
+  Globe, 
+  LogOut, 
+  LogIn,
+  ChevronRight,
+  Send,
+  CheckCircle2,
+  AlertCircle,
+  CloudSun,
+  MessageSquare,
+  Dices,
+  Ghost,
+  Search,
+  Swords,
+  Sun
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { GoogleGenAI } from "@google/genai";
+
+// Icon mapping
+const ICON_MAP: Record<string, any> = {
+  Zap, Bus, Train, Type, Minimize2, Layers, Shuffle, Dices, Ghost, Search, Swords, Sun
+};
+
+const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email || undefined,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId || undefined,
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+};
+
+export default function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [theme, setTheme] = useState<'organic' | 'modern'>('modern');
+  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
+  const [pontePrompt, setPontePrompt] = useState<any>(null);
+  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab'>('home');
+  const [publications, setPublications] = useState<Publication[]>([]);
+  const [writingContent, setWritingContent] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setIsAuthReady(true);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const path = 'publications';
+    const q = query(
+      collection(db, path), 
+      where('isModerated', '==', true),
+      orderBy('createdAt', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const pubs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Publication[];
+      setPublications(pubs);
+    }, (error) => {
+      console.error('Gallery subscription error:', error);
+      // We don't throw here to avoid crashing the app
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Test connection
+  useEffect(() => {
+    async function testConnection() {
+      try {
+        await getDocFromServer(doc(db, 'test', 'connection'));
+      } catch (error) {
+        if(error instanceof Error && error.message.includes('the client is offline')) {
+          console.error("Please check your Firebase configuration.");
+        }
+      }
+    }
+    testConnection();
+  }, []);
+
+  const handlePublish = async (labToolId?: string) => {
+    if (!user || (!activeChallenge && !labToolId) || !writingContent.trim()) return;
+    setIsPublishing(true);
+    
+    try {
+      // AI Moderation
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `Analiza el siguiente texto literario para una plataforma creativa. 
+        Determina si es adecuado para publicación pública (sin spam, sin odio, sin contenido sexual explícito). 
+        Responde SOLO con "APROBADO" o "RECHAZADO".
+        
+        Texto: "${writingContent}"`,
+      });
+
+      const isModerated = response.text?.trim().toUpperCase() === 'APROBADO';
+
+      if (!isModerated) {
+        alert("Tu texto no ha pasado el filtro de moderación automática. Por favor, revisa el contenido.");
+        setIsPublishing(false);
+        return;
+      }
+
+      const path = 'publications';
+      await addDoc(collection(db, path), {
+        challengeId: labToolId || activeChallenge?.id,
+        subTitle: pontePrompt?.title,
+        authorId: user.uid,
+        authorName: user.displayName || 'Anónimo',
+        content: writingContent,
+        createdAt: Date.now(),
+        isModerated: true
+      });
+
+      setPublishSuccess(true);
+      setTimeout(() => {
+        setPublishSuccess(false);
+        setView('gallery');
+        setActiveChallenge(null);
+        setActiveLabTool(null);
+        setWritingContent('');
+      }, 2000);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'publications');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    try {
+      await loginWithGoogle();
+    } catch (error: any) {
+      if (error.code !== 'auth/popup-closed-by-user') {
+        console.error('Login error:', error);
+      }
+    }
+  };
+
+  const renderHome = () => (
+    <div className="max-w-6xl mx-auto px-4 py-12">
+      <header className="text-center mb-16">
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`text-6xl md:text-9xl mb-4 tracking-tighter display`}
+        >
+          Pluma Creativa
+        </motion.h1>
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-xl opacity-70 italic"
+        >
+          Donde las palabras cobran vida y el ingenio se hace texto.
+        </motion.p>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {CHALLENGES.map((challenge, idx) => {
+          const Icon = ICON_MAP[challenge.icon || 'PenTool'] || PenTool;
+          return (
+            <motion.div
+              key={challenge.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.1 }}
+              whileHover={{ y: -5 }}
+              onClick={() => {
+                setActiveChallenge(challenge);
+                setView('challenge');
+              }}
+              className="card p-8 cursor-pointer group transition-all"
+            >
+              <div className={`w-14 h-14 rounded-3xl flex items-center justify-center mb-6 transition-all duration-500 ${theme === 'modern' ? 'bg-indigo-50 text-indigo-600 group-hover:scale-110' : 'bg-stone-100 text-stone-700'}`}>
+                <Icon className="w-7 h-7" />
+              </div>
+              <h3 className={`text-2xl font-bold mb-2 ${theme === 'modern' ? 'display' : ''}`}>{challenge.title}</h3>
+              <p className="opacity-60 mb-4 line-clamp-2 italic">{challenge.description}</p>
+              <div className="flex items-center font-bold uppercase text-sm tracking-widest">
+                Empezar reto <ChevronRight className="w-4 h-4 ml-1" />
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const renderChallenge = () => {
+    if (!activeChallenge) return null;
+    const isPonte = activeChallenge.id === 'ponte-si-puedes';
+
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <button 
+          onClick={() => {
+            setView('home');
+            setPontePrompt(null);
+          }}
+          className="mb-8 text-stone-500 hover:text-stone-800 flex items-center transition-colors"
+        >
+          ← Volver a los retos
+        </button>
+
+        <div className="card p-8 md:p-12 mb-8">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
+              {React.createElement(ICON_MAP[isPonte && pontePrompt ? pontePrompt.icon : (activeChallenge.icon || 'PenTool')], { className: "w-8 h-8 text-stone-700" })}
+            </div>
+            <div>
+              <span className="text-xs uppercase tracking-widest text-stone-400 font-bold">{activeChallenge.category}</span>
+              <h2 className="text-4xl font-bold">{isPonte && pontePrompt ? pontePrompt.title : activeChallenge.title}</h2>
+            </div>
+          </div>
+
+          <div className="prose prose-stone max-w-none mb-8">
+            <p className="text-xl leading-relaxed text-stone-700">{isPonte && pontePrompt ? pontePrompt.description : activeChallenge.description}</p>
+            
+            {isPonte && (
+              <button 
+                onClick={() => {
+                  const random = PONTE_SUB_PROMPTS[Math.floor(Math.random() * PONTE_SUB_PROMPTS.length)];
+                  setPontePrompt(random);
+                }}
+                className="mt-4 flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-full font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+              >
+                <Shuffle className="w-5 h-5" /> {pontePrompt ? 'Cambiar planteamiento' : 'Obtener planteamiento aleatorio'}
+              </button>
+            )}
+
+            <div className="bg-stone-50 p-6 rounded-2xl border border-stone-100 italic mt-8">
+              <strong className="block mb-2 not-italic text-stone-400 uppercase text-xs tracking-widest">Ejemplo:</strong>
+              {activeChallenge.example}
+            </div>
+          </div>
+
+          {(!isPonte || pontePrompt) && (
+            <WritingArea 
+              user={user}
+              writingContent={writingContent}
+              setWritingContent={setWritingContent}
+              onPublish={() => handlePublish()}
+              isPublishing={isPublishing}
+              publishSuccess={publishSuccess}
+              onLogin={handleLogin}
+            />
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderGallery = () => (
+    <div className="max-w-5xl mx-auto px-4 py-12">
+      <div className="flex justify-between items-end mb-12">
+        <div>
+          <h2 className="text-5xl font-bold mb-2">Galería Pública</h2>
+          <p className="text-stone-500 italic">Inspiración compartida por nuestra comunidad.</p>
+        </div>
+        <button 
+          onClick={() => setView('home')}
+          className="text-stone-800 font-medium flex items-center hover:underline underline-offset-8"
+        >
+          Ver retos <ChevronRight className="w-4 h-4 ml-1" />
+        </button>
+      </div>
+
+      <div className="space-y-8">
+        {publications.length === 0 ? (
+          <div className="text-center py-20 card">
+            <PenTool className="w-12 h-12 text-stone-200 mx-auto mb-4" />
+            <p className="text-stone-400">Aún no hay publicaciones. ¡Sé el primero!</p>
+          </div>
+        ) : (
+          publications.map((pub) => {
+            const challenge = CHALLENGES.find(c => c.id === pub.challengeId);
+            const labToolNames: Record<string, string> = {
+              'lab-micro-story': 'Microhistorias',
+              'lab-weather-action': 'Tiempo y Acciones',
+              'lab-surreal-dialog': 'Diálogos Surrealistas'
+            };
+            const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
+            
+            return (
+              <motion.div 
+                key={pub.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="card p-8 md:p-10"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                      Reto: {challengeTitle}
+                    </span>
+                    <h4 className="text-lg font-semibold text-stone-800">Por {pub.authorName}</h4>
+                  </div>
+                  <span className="text-xs text-stone-400">
+                    {new Date(pub.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="prose prose-stone max-w-none">
+                  <p className="text-2xl leading-relaxed whitespace-pre-wrap">{pub.content}</p>
+                </div>
+              </motion.div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+
+  const [activeLabTool, setActiveLabTool] = useState<string | null>(null);
+
+  const renderLab = () => {
+    if (activeLabTool === 'microstory') {
+      return (
+        <div className="max-w-6xl mx-auto px-4 py-12">
+          <button 
+            onClick={() => {
+              setActiveLabTool(null);
+              setWritingContent('');
+            }}
+            className="mb-8 flex items-center gap-2 opacity-40 hover:opacity-100 transition-opacity font-bold uppercase text-xs tracking-widest"
+          >
+            <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
+          </button>
+          <MicroStoryLab 
+            theme={theme}
+            user={user}
+            writingContent={writingContent}
+            setWritingContent={setWritingContent}
+            onPublish={() => handlePublish('lab-micro-story')}
+            isPublishing={isPublishing}
+            publishSuccess={publishSuccess}
+            onLogin={handleLogin}
+          />
+        </div>
+      );
+    }
+
+    if (activeLabTool === 'weatheraction') {
+      return (
+        <div className="max-w-6xl mx-auto px-4 py-12">
+          <button 
+            onClick={() => {
+              setActiveLabTool(null);
+              setWritingContent('');
+            }}
+            className="mb-8 flex items-center gap-2 opacity-40 hover:opacity-100 transition-opacity font-bold uppercase text-xs tracking-widest"
+          >
+            <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
+          </button>
+          <WeatherActionLab 
+            theme={theme}
+            user={user}
+            writingContent={writingContent}
+            setWritingContent={setWritingContent}
+            onPublish={() => handlePublish('lab-weather-action')}
+            isPublishing={isPublishing}
+            publishSuccess={publishSuccess}
+            onLogin={handleLogin}
+          />
+        </div>
+      );
+    }
+
+    if (activeLabTool === 'surrealdialog') {
+      return (
+        <div className="max-w-6xl mx-auto px-4 py-12">
+          <button 
+            onClick={() => {
+              setActiveLabTool(null);
+              setWritingContent('');
+            }}
+            className="mb-8 flex items-center gap-2 opacity-40 hover:opacity-100 transition-opacity font-bold uppercase text-xs tracking-widest"
+          >
+            <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
+          </button>
+          <SurrealDialogLab 
+            theme={theme}
+            user={user}
+            writingContent={writingContent}
+            setWritingContent={setWritingContent}
+            onPublish={() => handlePublish('lab-surreal-dialog')}
+            isPublishing={isPublishing}
+            publishSuccess={publishSuccess}
+            onLogin={handleLogin}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        <div className="text-center mb-16">
+          <h2 className={`text-5xl md:text-7xl mb-4 font-bold ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>Laboratorio de Ideas</h2>
+          <p className="text-xl opacity-60 italic max-w-2xl mx-auto">
+            Explora herramientas experimentales diseñadas para desbloquear nuevos horizontes en tu escritura.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <motion.div 
+            whileHover={{ y: -5 }}
+            onClick={() => setActiveLabTool('microstory')}
+            className="card p-10 flex flex-col items-center text-center group cursor-pointer"
+          >
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+              <Type className="w-10 h-10" />
+            </div>
+            <h3 className={`text-3xl font-bold mb-4 ${theme === 'modern' ? 'display' : ''}`}>Microhistorias</h3>
+            <p className="opacity-60 mb-8 max-w-sm">Genera letras aleatorias y desafía tu mente a crear oraciones coherentes bajo presión creativa.</p>
+            <button className="olive-button">Abrir Herramienta</button>
+          </motion.div>
+
+          <motion.div 
+            whileHover={{ y: -5 }}
+            onClick={() => setActiveLabTool('weatheraction')}
+            className="card p-10 flex flex-col items-center text-center group cursor-pointer"
+          >
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+              <CloudSun className="w-10 h-10" />
+            </div>
+            <h3 className={`text-3xl font-bold mb-4 ${theme === 'modern' ? 'display' : ''}`}>Tiempo y Acciones</h3>
+            <p className="opacity-60 mb-8 max-w-sm">Combina el tiempo atmosférico con acciones variadas para inspirar tus relatos más dinámicos.</p>
+            <button className="olive-button">Abrir Herramienta</button>
+          </motion.div>
+
+          <motion.div 
+            whileHover={{ y: -5 }}
+            onClick={() => setActiveLabTool('surrealdialog')}
+            className="card p-10 flex flex-col items-center text-center group cursor-pointer"
+          >
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+              <MessageSquare className="w-10 h-10" />
+            </div>
+            <h3 className={`text-3xl font-bold mb-4 ${theme === 'modern' ? 'display' : ''}`}>Diálogos Surrealistas</h3>
+            <p className="opacity-60 mb-8 max-w-sm">Genera personajes absurdos y crea conversaciones imposibles entre objetos y conceptos.</p>
+            <button className="olive-button">Abrir Herramienta</button>
+          </motion.div>
+
+          <motion.div 
+            whileHover={{ y: -5 }}
+            className="card p-10 flex flex-col items-center text-center group opacity-50"
+          >
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+              <Globe className="w-10 h-10" />
+            </div>
+            <h3 className={`text-3xl font-bold mb-4 ${theme === 'modern' ? 'display' : ''}`}>Generador de Mundos</h3>
+            <p className="opacity-60 mb-8 max-w-sm">Crea ecosistemas, mitologías y geografías únicas para tus historias de fantasía o ciencia ficción.</p>
+            <button className="olive-button opacity-50 cursor-not-allowed">Próximamente</button>
+          </motion.div>
+
+          <div className="md:col-span-2 card p-12 bg-indigo-600/5 border-dashed border-2 border-indigo-200 flex flex-col items-center justify-center text-center">
+            <Zap className="w-12 h-12 text-indigo-400 mb-4" />
+            <h4 className="text-2xl font-bold mb-2">¿Tienes una herramienta propia?</h4>
+            <p className="opacity-60 max-w-lg mb-6">Estamos listos para integrar tus otras aplicaciones de AI Studio aquí mismo para centralizar tu flujo creativo.</p>
+            <div className="text-sm font-bold text-indigo-600 uppercase tracking-widest">Listo para integración</div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className={`min-h-screen flex flex-col theme-${theme}`}>
+      <nav className={`sticky top-0 z-50 backdrop-blur-md border-b px-6 py-4 flex justify-between items-center transition-all duration-500 ${theme === 'modern' ? 'bg-white/70 border-indigo-50' : 'bg-white/80 border-stone-100'}`}>
+        <div className="flex items-center gap-8">
+          <div 
+            className={`text-2xl font-bold cursor-pointer tracking-tighter ${theme === 'modern' ? 'display text-indigo-600' : 'text-stone-900'}`}
+            onClick={() => setView('home')}
+          >
+            Pluma Creativa
+          </div>
+          
+          {/* Theme Selector */}
+          <div className={`hidden md:flex p-1 rounded-full gap-1 transition-colors ${theme === 'modern' ? 'bg-indigo-50' : 'bg-stone-100'}`}>
+            <button 
+              onClick={() => setTheme('modern')}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${theme === 'modern' ? 'bg-white text-indigo-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+            >
+              MODERNO
+            </button>
+            <button 
+              onClick={() => setTheme('organic')}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${theme === 'organic' ? 'bg-stone-800 text-white shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+            >
+              CLÁSICO
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6 sans text-sm font-medium">
+          <button onClick={() => setView('home')} className={`hover:opacity-100 transition-all ${view === 'home' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Retos</button>
+          <button onClick={() => setView('gallery')} className={`hover:opacity-100 transition-all ${view === 'gallery' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Galería</button>
+          <button onClick={() => setView('lab')} className={`hover:opacity-100 transition-all ${view === 'lab' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Laboratorio</button>
+          {user ? (
+            <div className="flex items-center gap-4">
+              <span className="hidden md:inline opacity-40">Hola, {user.displayName?.split(' ')[0]}</span>
+              <button onClick={logout} className="opacity-40 hover:opacity-100 hover:text-red-500 transition-all">
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <button onClick={handleLogin} className="opacity-60 hover:opacity-100 transition-all">Entrar</button>
+          )}
+        </div>
+      </nav>
+
+      <main className="flex-grow">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={view + (activeChallenge?.id || '')}
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {view === 'home' && renderHome()}
+            {view === 'challenge' && renderChallenge()}
+            {view === 'gallery' && renderGallery()}
+            {view === 'lab' && renderLab()}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      <footer className={`py-12 px-6 border-t mt-20 transition-colors ${theme === 'modern' ? 'border-indigo-50 bg-indigo-50/10' : 'border-stone-200 bg-stone-50/30'}`}>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="text-center md:text-left">
+            <h3 className={`text-xl font-bold mb-2 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>Pluma Creativa</h3>
+            <p className="opacity-40 text-sm italic">Cultivando el jardín de las palabras.</p>
+          </div>
+          <div className="flex gap-8 text-sm opacity-40 sans">
+            <a href="#" className="hover:opacity-100 transition-opacity">Privacidad</a>
+            <a href="#" className="hover:opacity-100 transition-opacity">Términos</a>
+            <a href="#" className="hover:opacity-100 transition-opacity">Contacto</a>
+          </div>
+          <p className="text-xs opacity-30 sans">© 2026 Pluma Creativa. Todos los derechos reservados.</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
