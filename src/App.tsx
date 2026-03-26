@@ -45,7 +45,8 @@ import {
   Sun,
   Sparkles,
   Trash2,
-  Edit3
+  Edit3,
+  ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -82,6 +83,9 @@ export default function App() {
   const [writingContent, setWritingContent] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
+  const [galleryFilter, setGalleryFilter] = useState<string>('all');
+  const [showExamples, setShowExamples] = useState(false);
+  const [openFilterDropdown, setOpenFilterDropdown] = useState<'retos' | 'lab' | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -267,6 +271,8 @@ export default function App() {
               <strong className="block mb-2 not-italic text-stone-400 uppercase text-xs tracking-widest">Ejemplo:</strong>
               {isPonte && pontePrompt?.example ? pontePrompt.example : activeChallenge.example}
             </div>
+
+            {renderExamplesCarousel(activeChallenge.id)}
           </div>
 
           {(!isPonte || pontePrompt) && (
@@ -308,85 +314,273 @@ export default function App() {
     }
   };
 
-  const renderGallery = () => (
-    <div className="max-w-5xl mx-auto px-4 py-12">
-      <div className="flex justify-between items-end mb-12">
-        <div>
-          <h2 className="text-5xl font-bold mb-2">Galería Pública</h2>
-          <p className="text-stone-500 italic">Inspiración compartida por nuestra comunidad.</p>
-        </div>
-        <button 
-          onClick={() => setView('home')}
-          className="text-stone-800 font-medium flex items-center hover:underline underline-offset-8"
-        >
-          Ver retos <ChevronRight className="w-4 h-4 ml-1" />
-        </button>
-      </div>
+  const navigateToSource = (pub: Publication) => {
+    const challenge = CHALLENGES.find(c => c.id === pub.challengeId);
+    if (challenge) {
+      setActiveChallenge(challenge);
+      if (challenge.id === 'ponte-si-puedes' && pub.subTitle) {
+        const subPrompt = PONTE_SUB_PROMPTS.find(p => p.title === pub.subTitle);
+        if (subPrompt) setPontePrompt(subPrompt);
+      }
+      setView('challenge');
+    } else if (pub.challengeId.startsWith('lab-')) {
+      const toolId = pub.challengeId.replace('lab-', '').replace('-', '');
+      setActiveLabTool(toolId);
+      setView('lab');
+    }
+    window.scrollTo(0, 0);
+  };
 
-      <div className="space-y-8">
-        {publications.length === 0 ? (
-          <div className="text-center py-20 card">
-            <PenTool className="w-12 h-12 text-stone-200 mx-auto mb-4" />
-            <p className="text-stone-400">Aún no hay publicaciones. ¡Sé el primero!</p>
-          </div>
+  const renderExamplesCarousel = (challengeId: string) => {
+    const examples = publications.filter(p => p.challengeId === challengeId);
+    if (examples.length === 0) return null;
+
+    return (
+      <div className="mt-8 pt-8 border-t border-stone-100">
+        {!showExamples ? (
+          <button 
+            onClick={() => setShowExamples(true)}
+            className="flex items-center gap-2 text-indigo-600 font-bold hover:underline"
+          >
+            <Sparkles className="w-5 h-5" /> Ver ejemplos de otros escritores e inspirarse
+          </button>
         ) : (
-          publications.map((pub) => {
-            const challenge = CHALLENGES.find(c => c.id === pub.challengeId);
-            const labToolNames: Record<string, string> = {
-              'lab-micro-story': 'Microhistorias',
-              'lab-weather-action': 'Tiempo y Acciones',
-              'lab-surreal-dialog': 'Diálogos Surrealistas'
-            };
-            const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
-            
-            return (
-              <motion.div 
-                key={pub.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="card p-8 md:p-10 relative group"
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h4 className="font-bold text-stone-400 uppercase text-xs tracking-widest">Inspiración de la comunidad</h4>
+              <button 
+                onClick={() => setShowExamples(false)}
+                className="text-stone-400 hover:text-stone-800 text-xs font-bold uppercase tracking-widest"
               >
-                {isAdmin && (
-                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => handleEdit(pub)}
-                      className="p-2 bg-stone-100 hover:bg-indigo-100 text-stone-600 hover:text-indigo-600 rounded-full transition-colors"
-                      title="Editar"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(pub.id)}
-                      className="p-2 bg-stone-100 hover:bg-red-100 text-stone-600 hover:text-red-600 rounded-full transition-colors"
-                      title="Borrar"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">
-                      Reto: {challengeTitle}
-                    </span>
-                    <h4 className="text-lg font-semibold text-stone-800">Por {pub.authorName}</h4>
-                  </div>
-                  <span className="text-xs text-stone-400">
-                    {pub.createdAt?.toDate 
-                      ? pub.createdAt.toDate().toLocaleDateString() 
-                      : new Date(pub.createdAt).toLocaleDateString()}
-                  </span>
+                Ocultar
+              </button>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-4 snap-x">
+              {examples.map((ex) => (
+                <div 
+                  key={ex.id} 
+                  className="min-w-[300px] max-w-[400px] bg-white p-6 rounded-2xl border border-stone-100 shadow-sm snap-start"
+                >
+                  <p className="text-stone-600 italic line-clamp-4 mb-4">"{ex.content}"</p>
+                  <span className="text-xs font-bold text-stone-400">— {ex.authorName}</span>
                 </div>
-                <div className="prose prose-stone max-w-none">
-                  <p className="text-2xl leading-relaxed whitespace-pre-wrap">{pub.content}</p>
-                </div>
-              </motion.div>
-            );
-          })
+              ))}
+            </div>
+          </div>
         )}
       </div>
-    </div>
-  );
+    );
+  };
+
+  const renderGallery = () => {
+    const filteredPubs = galleryFilter === 'all' 
+      ? publications 
+      : publications.filter(p => p.challengeId === galleryFilter);
+
+    const labOptions = [
+      { id: 'lab-micro-story', title: 'Microhistorias' },
+      { id: 'lab-weather-action', title: 'Tiempo y Acciones' },
+      { id: 'lab-surreal-dialog', title: 'Diálogos Surrealistas' }
+    ];
+
+    const getFilterLabel = () => {
+      if (galleryFilter === 'all') return 'Todos';
+      const challenge = CHALLENGES.find(c => c.id === galleryFilter);
+      if (challenge) return challenge.title;
+      const lab = labOptions.find(l => l.id === galleryFilter);
+      if (lab) return lab.title;
+      return 'Filtrar';
+    };
+
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-12">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+          <div>
+            <h2 className="text-5xl font-bold mb-2">Galería Pública</h2>
+            <p className="text-stone-500 italic">Inspiración compartida por nuestra comunidad.</p>
+          </div>
+          <div className="flex flex-col items-end gap-4 w-full md:w-auto">
+            <div className="flex items-center gap-4 bg-stone-100 p-1.5 rounded-2xl relative">
+              <button
+                onClick={() => {
+                  setGalleryFilter('all');
+                  setOpenFilterDropdown(null);
+                }}
+                className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+                  galleryFilter === 'all' 
+                    ? 'bg-white text-stone-800 shadow-sm' 
+                    : 'text-stone-400 hover:text-stone-600'
+                }`}
+              >
+                Todos
+              </button>
+
+              <div className="relative">
+                <button
+                  onClick={() => setOpenFilterDropdown(openFilterDropdown === 'retos' ? null : 'retos')}
+                  className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${
+                    CHALLENGES.some(c => c.id === galleryFilter)
+                      ? 'bg-white text-stone-800 shadow-sm' 
+                      : 'text-stone-400 hover:text-stone-600'
+                  }`}
+                >
+                  Retos <ChevronDown className={`w-4 h-4 transition-transform ${openFilterDropdown === 'retos' ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {openFilterDropdown === 'retos' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute top-full left-0 mt-2 w-64 bg-white border border-stone-100 rounded-2xl shadow-xl z-50 py-2"
+                    >
+                      {CHALLENGES.map(c => (
+                        <button
+                          key={c.id}
+                          onClick={() => {
+                            setGalleryFilter(c.id);
+                            setOpenFilterDropdown(null);
+                          }}
+                          className={`w-full text-left px-4 py-2 text-sm hover:bg-stone-50 transition-colors ${
+                            galleryFilter === c.id ? 'text-indigo-600 font-bold' : 'text-stone-600'
+                          }`}
+                        >
+                          {c.title}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <div className="relative">
+                <button
+                  onClick={() => setOpenFilterDropdown(openFilterDropdown === 'lab' ? null : 'lab')}
+                  className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${
+                    labOptions.some(l => l.id === galleryFilter)
+                      ? 'bg-white text-stone-800 shadow-sm' 
+                      : 'text-stone-400 hover:text-stone-600'
+                  }`}
+                >
+                  Laboratorio <ChevronDown className={`w-4 h-4 transition-transform ${openFilterDropdown === 'lab' ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {openFilterDropdown === 'lab' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute top-full right-0 mt-2 w-64 bg-white border border-stone-100 rounded-2xl shadow-xl z-50 py-2"
+                    >
+                      {labOptions.map(l => (
+                        <button
+                          key={l.id}
+                          onClick={() => {
+                            setGalleryFilter(l.id);
+                            setOpenFilterDropdown(null);
+                          }}
+                          className={`w-full text-left px-4 py-2 text-sm hover:bg-stone-50 transition-colors ${
+                            galleryFilter === l.id ? 'text-indigo-600 font-bold' : 'text-stone-600'
+                          }`}
+                        >
+                          {l.title}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              {galleryFilter !== 'all' && (
+                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+                  Filtro: {getFilterLabel()}
+                </span>
+              )}
+              <button 
+                onClick={() => setView('home')}
+                className="text-stone-800 font-medium flex items-center hover:underline underline-offset-8"
+              >
+                Ver retos <ChevronRight className="w-4 h-4 ml-1" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-8">
+          {filteredPubs.length === 0 ? (
+            <div className="text-center py-20 card">
+              <PenTool className="w-12 h-12 text-stone-200 mx-auto mb-4" />
+              <p className="text-stone-400">No hay publicaciones para este filtro. ¡Sé el primero!</p>
+            </div>
+          ) : (
+            filteredPubs.map((pub) => {
+              const challenge = CHALLENGES.find(c => c.id === pub.challengeId);
+              const labToolNames: Record<string, string> = {
+                'lab-micro-story': 'Microhistorias',
+                'lab-weather-action': 'Tiempo y Acciones',
+                'lab-surreal-dialog': 'Diálogos Surrealistas'
+              };
+              const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
+              
+              return (
+                <motion.div 
+                  key={pub.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="card p-8 md:p-10 relative group"
+                >
+                  {isAdmin && (
+                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => handleEdit(pub)}
+                        className="p-2 bg-stone-100 hover:bg-indigo-100 text-stone-600 hover:text-indigo-600 rounded-full transition-colors"
+                        title="Editar"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(pub.id)}
+                        className="p-2 bg-stone-100 hover:bg-red-100 text-stone-600 hover:text-red-600 rounded-full transition-colors"
+                        title="Borrar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                        Reto: {challengeTitle}
+                      </span>
+                      <h4 className="text-lg font-semibold text-stone-800">Por {pub.authorName}</h4>
+                    </div>
+                    <span className="text-xs text-stone-400">
+                      {pub.createdAt?.toDate 
+                        ? pub.createdAt.toDate().toLocaleDateString() 
+                        : new Date(pub.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="prose prose-stone max-w-none mb-8">
+                    <p className="text-2xl leading-relaxed whitespace-pre-wrap">{pub.content}</p>
+                  </div>
+                  <div className="pt-6 border-t border-stone-100">
+                    <button 
+                      onClick={() => navigateToSource(pub)}
+                      className="text-xs font-bold text-indigo-600 uppercase tracking-widest hover:underline flex items-center gap-1"
+                    >
+                      Publicado desde {challengeTitle} <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const [activeLabTool, setActiveLabTool] = useState<string | null>(null);
 
@@ -413,6 +607,9 @@ export default function App() {
             publishSuccess={publishSuccess}
             onLogin={handleLogin}
           />
+          <div className="max-w-4xl mx-auto">
+            {renderExamplesCarousel('lab-micro-story')}
+          </div>
         </div>
       );
     }
@@ -439,6 +636,9 @@ export default function App() {
             publishSuccess={publishSuccess}
             onLogin={handleLogin}
           />
+          <div className="max-w-4xl mx-auto">
+            {renderExamplesCarousel('lab-weather-action')}
+          </div>
         </div>
       );
     }
@@ -465,6 +665,9 @@ export default function App() {
             publishSuccess={publishSuccess}
             onLogin={handleLogin}
           />
+          <div className="max-w-4xl mx-auto">
+            {renderExamplesCarousel('lab-surreal-dialog')}
+          </div>
         </div>
       );
     }

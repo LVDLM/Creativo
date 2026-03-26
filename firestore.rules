@@ -61,7 +61,7 @@ service cloud.firestore {
              data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
              data.createdAt == request.time &&
              data.isModerated is bool &&
-             (!('subTitle' in data) || (data.subTitle is string && data.subTitle.size() < 200));
+             (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200));
     }
 
     function isValidUser(data) {
