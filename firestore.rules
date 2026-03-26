@@ -1,57 +1,107 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: publications
+// Document ID: auto-generated
+// Fields:
+//   - challengeId: string (required) - ID of the challenge or lab tool
+//   - subTitle: string (optional) - Specific sub-prompt title
+//   - authorId: string (required) - UID of the author
+//   - authorName: string (required) - Display name of the author
+//   - content: string (required, max 5000 chars) - The written content
+//   - createdAt: timestamp (required) - Creation time
+//   - isModerated: bool (required) - Moderation status
+//
+// Collection: users
+// Document ID: userId (UID)
+// Fields:
+//   - displayName: string (required) - User's name
+//   - email: string (required) - User's email
+//   - photoURL: string (optional) - User's photo
+//   - role: string (required, enum: ['admin', 'user']) - User's role
+//
+// ===============================================================
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    // Collection: challenges
-    // Fields: id, title, description, example, category
-    //
-    // Collection: publications
-    // Fields: id, challengeId, authorId, authorName, content, createdAt, isModerated
-    // ===============================================================
 
+    // ===============================================================
     // Helper Functions
+    // ===============================================================
+    
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "lavozdelosmuertos@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
     function isValidPublication(data) {
-      return data.keys().hasAll(['id', 'challengeId', 'authorId', 'content', 'createdAt']) &&
+      return data.keys().hasAll(['challengeId', 'authorId', 'authorName', 'content', 'createdAt', 'isModerated']) &&
+             data.challengeId is string && data.challengeId.size() > 0 && data.challengeId.size() < 100 &&
+             data.authorId == request.auth.uid &&
+             data.authorName is string && data.authorName.size() > 0 && data.authorName.size() < 100 &&
              data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
-             data.authorName is string && data.authorName.size() < 100 &&
-             data.challengeId is string;
+             data.createdAt == request.time &&
+             data.isModerated is bool &&
+             (!('subTitle' in data) || (data.subTitle is string && data.subTitle.size() < 200));
     }
 
-    // Challenges are read-only for users
-    match /challenges/{challengeId} {
-      allow read: if true;
-      allow write: if false;
+    function isValidUser(data) {
+      return data.keys().hasAll(['displayName', 'email', 'role']) &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 100 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.role in ['admin', 'user'] &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() < 500));
     }
 
-    // Publications
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
     match /publications/{pubId} {
-      // Only moderated publications are publicly readable
-      allow read: if resource.data.isModerated == true || isOwner(resource.data.authorId);
+      // Anyone can read moderated publications
+      allow read: if resource.data.isModerated == true;
       
-      // Users can create their own publications
-      allow create: if isAuthenticated() && 
-                      request.resource.data.authorId == request.auth.uid &&
-                      isValidPublication(request.resource.data);
-                      
-      // Users can delete their own publications
-      allow delete: if isOwner(resource.data.authorId);
+      // Authenticated users can create their own publications
+      allow create: if isAuthenticated() && isValidPublication(request.resource.data);
       
-      // Updates are restricted (e.g., moderation status is handled by server/AI)
-      // For this demo, we'll allow the user to set isModerated if they pass the client-side check
-      // but in a real app this would be a cloud function.
-      allow update: if isOwner(resource.data.authorId) && 
-                      isValidPublication(request.resource.data) &&
-                      request.resource.data.authorId == resource.data.authorId;
+      // Only owners or admins can delete
+      allow delete: if isDocOwner() || isAdmin();
+      
+      // Updates are restricted (usually not needed for this app, but if so, validate)
+      allow update: if false; 
+    }
+
+    match /users/{userId} {
+      // Users can only read their own profile
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can create/update their own profile, but cannot set themselves as admin
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

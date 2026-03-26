@@ -72,24 +72,35 @@ export const PONTE_SUB_PROMPTS = [
     id: 'misterioso',
     title: "Ponte misterioso",
     description: "Escribe un relato donde un grupo de personajes resuelvan un misterio. Debe incluir: Un árbol viejo, un mensaje y Suances.",
+    example: "El viejo roble de la plaza de Suances guardaba un sobre lacrado entre sus raíces...",
     icon: "Ghost"
   },
   {
     id: 'investigar',
     title: "Ponte a investigar",
     description: "Escribe la historia de un objeto personal importante para alguien de tu familia.",
+    example: "El reloj de bolsillo de mi abuelo no daba la hora, pero contaba historias de la guerra...",
     icon: "Search"
   },
   {
     id: 'romano',
     title: "Ponte romano",
     description: "Describe el encuentro entre los ejércitos romanos y el pueblo cántabro. Debes incluir, al menos, cuatro (4) frases en latín.",
+    example: "Veni, vidi, vici. Los cántabros observaban desde las cumbres...",
     icon: "Swords"
+  },
+  {
+    id: 'mitologico',
+    title: "Ponte mitológico",
+    description: "Elige un personaje mitológico y sitúalo en el mundo actual.",
+    example: "Ícaro trabajaba ahora en una empresa de mensajería con drones, pero seguía mirando al sol...",
+    icon: "Sparkles"
   },
   {
     id: 'divino',
     title: "Ponte Divino",
     description: "Describe el encuentro entre dos dioses romanos. Debes incluir, al menos, alguno de sus vástagos.",
+    example: "Marte y Venus discutían en un café, mientras Cupido jugaba con su arco de juguete...",
     icon: "Sun"
   }
 ];

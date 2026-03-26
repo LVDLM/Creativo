@@ -1,42 +1,63 @@
 {
   "entities": {
-    "Challenge": {
-      "title": "Challenge",
-      "description": "A creative writing challenge definition.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string", "description": "Unique ID for the challenge." },
-        "title": { "type": "string", "description": "Title of the challenge." },
-        "description": { "type": "string", "description": "Instructions for the challenge." },
-        "example": { "type": "string", "description": "An example of a successful text." },
-        "category": { "type": "string", "description": "Category (e.g., wordplay, poetry, story)." }
-      },
-      "required": ["id", "title", "description"]
-    },
     "Publication": {
       "title": "Publication",
-      "description": "A user-submitted text that has been published.",
+      "description": "A creative piece of writing published by a user.",
       "type": "object",
       "properties": {
-        "id": { "type": "string", "description": "Unique ID for the publication." },
-        "challengeId": { "type": "string", "description": "ID of the challenge it belongs to." },
-        "authorId": { "type": "string", "description": "UID of the author." },
-        "authorName": { "type": "string", "description": "Display name of the author." },
-        "content": { "type": "string", "description": "The written text." },
-        "createdAt": { "type": "string", "format": "date-time", "description": "When it was published." },
-        "isModerated": { "type": "boolean", "description": "Whether it passed the AI filter." }
+        "challengeId": {
+          "type": "string",
+          "description": "The ID of the challenge or lab tool used."
+        },
+        "subTitle": {
+          "type": "string",
+          "description": "The specific sub-prompt title if applicable (e.g., for 'Ponte...')."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "The UID of the author."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "The display name of the author."
+        },
+        "content": {
+          "type": "string",
+          "description": "The written content."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the publication was created."
+        },
+        "isModerated": {
+          "type": "boolean",
+          "description": "Whether the content has passed moderation."
+        }
       },
-      "required": ["id", "challengeId", "authorId", "content", "createdAt"]
+      "required": ["challengeId", "authorId", "authorName", "content", "createdAt", "isModerated"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile information.",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["displayName", "email", "role"]
     }
   },
   "firestore": {
-    "/challenges": {
-      "schema": "Challenge",
-      "description": "Static list of challenges."
-    },
-    "/publications": {
+    "/publications/{publicationId}": {
       "schema": "Publication",
-      "description": "Publicly shared texts."
+      "description": "Public gallery of creative writings."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data."
     }
   }
 }

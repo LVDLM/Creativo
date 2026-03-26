@@ -14,7 +14,7 @@ export interface Publication {
   authorId: string;
   authorName: string;
   content: string;
-  createdAt: number;
+  createdAt: any;
   isModerated: boolean;
 }
 

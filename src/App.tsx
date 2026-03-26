@@ -40,14 +40,15 @@ import {
   Ghost,
   Search,
   Swords,
-  Sun
+  Sun,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenAI } from "@google/genai";
 
 // Icon mapping
 const ICON_MAP: Record<string, any> = {
-  Zap, Bus, Train, Type, Minimize2, Layers, Shuffle, Dices, Ghost, Search, Swords, Sun
+  Zap, Bus, Train, Type, Minimize2, Layers, Shuffle, Dices, Ghost, Search, Swords, Sun, Sparkles
 };
 
 const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
@@ -131,7 +132,7 @@ export default function App() {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: `Analiza el siguiente texto literario para una plataforma creativa. 
-        Determina si es adecuado para publicación pública (sin spam, sin odio, sin contenido sexual explícito). 
+        Determina si es adecuado para publicación pública (sin spam, sin odio, sin contenido sexual explícito, sin nombres reales de personalidades unidos a descalificaciones). 
         Responde SOLO con "APROBADO" o "RECHAZADO".
         
         Texto: "${writingContent}"`,
@@ -146,15 +147,19 @@ export default function App() {
       }
 
       const path = 'publications';
-      await addDoc(collection(db, path), {
-        challengeId: labToolId || activeChallenge?.id,
-        subTitle: pontePrompt?.title,
-        authorId: user.uid,
-        authorName: user.displayName || 'Anónimo',
-        content: writingContent,
-        createdAt: Date.now(),
-        isModerated: true
-      });
+      try {
+        await addDoc(collection(db, path), {
+          challengeId: labToolId || activeChallenge?.id,
+          subTitle: pontePrompt?.title || null,
+          authorId: user.uid,
+          authorName: user.displayName || 'Anónimo',
+          content: writingContent,
+          createdAt: serverTimestamp(),
+          isModerated: true
+        });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.CREATE, path);
+      }
 
       setPublishSuccess(true);
       setTimeout(() => {
@@ -276,7 +281,7 @@ export default function App() {
 
             <div className="bg-stone-50 p-6 rounded-2xl border border-stone-100 italic mt-8">
               <strong className="block mb-2 not-italic text-stone-400 uppercase text-xs tracking-widest">Ejemplo:</strong>
-              {activeChallenge.example}
+              {isPonte && pontePrompt?.example ? pontePrompt.example : activeChallenge.example}
             </div>
           </div>
 
@@ -342,7 +347,9 @@ export default function App() {
                     <h4 className="text-lg font-semibold text-stone-800">Por {pub.authorName}</h4>
                   </div>
                   <span className="text-xs text-stone-400">
-                    {new Date(pub.createdAt).toLocaleDateString()}
+                    {pub.createdAt?.toDate 
+                      ? pub.createdAt.toDate().toLocaleDateString() 
+                      : new Date(pub.createdAt).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="prose prose-stone max-w-none">

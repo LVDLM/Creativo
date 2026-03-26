@@ -1,10 +1,10 @@
 export const WORD_LIST = [
   // Naturaleza: Animales
-  "León", "Lobo", "Águila", "Ballena", "Hormiga", "Paloma",
+  "León", "Lobo", "Águila", "Ballena", "Hormiga", "Paloma", "Hipopótamo", "Caballo", "Rana","Mariposa",
   // Naturaleza: Plantas
-  "Girasol", "Pino", "Cactus", "Roble", "Alga", "Rosa", "Castaño",
+  "Girasol", "Pino", "Cactus", "Roble", "Alga", "Rosa", "Castaño", "Flor", "Hoja", "Pétalo", "Semilla",
   // Naturaleza: Accidentes Geográficos
-  "Montaña", "Volcán", "Océano", "Desierto", "Río", "Ola", "Playa", "Arena",
+  "Montaña", "Volcán", "Océano", "Desierto", "Río", "Ola", "Playa", "Arena", "Valle", "Ribera", "Meandro", "Camino",
   // Objetos Cotidianos
   "Silla", "Reloj", "Paraguas", "Teléfono", "Libro",
   "Llave", "Espejo", "Lámpara", "Martillo", "Brújula",
