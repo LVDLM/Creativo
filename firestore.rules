@@ -86,8 +86,8 @@ service cloud.firestore {
       // Only owners or admins can delete
       allow delete: if isDocOwner() || isAdmin();
       
-      // Updates are restricted (usually not needed for this app, but if so, validate)
-      allow update: if false; 
+      // Admins can update publications (for manual moderation/editing)
+      allow update: if isAdmin(); 
     }
 
     match /users/{userId} {

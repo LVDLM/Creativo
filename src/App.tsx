@@ -8,7 +8,9 @@ import {
   onSnapshot, 
   serverTimestamp,
   doc,
-  getDocFromServer
+  getDocFromServer,
+  deleteDoc,
+  updateDoc
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db, loginWithGoogle, logout } from './firebase';
@@ -41,10 +43,11 @@ import {
   Search,
   Swords,
   Sun,
-  Sparkles
+  Sparkles,
+  Trash2,
+  Edit3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GoogleGenAI } from "@google/genai";
 
 // Icon mapping
 const ICON_MAP: Record<string, any> = {
@@ -127,25 +130,6 @@ export default function App() {
     setIsPublishing(true);
     
     try {
-      // AI Moderation
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Analiza el siguiente texto literario para una plataforma creativa. 
-        Determina si es adecuado para publicación pública (sin spam, sin odio, sin contenido sexual explícito, sin nombres reales de personalidades unidos a descalificaciones). 
-        Responde SOLO con "APROBADO" o "RECHAZADO".
-        
-        Texto: "${writingContent}"`,
-      });
-
-      const isModerated = response.text?.trim().toUpperCase() === 'APROBADO';
-
-      if (!isModerated) {
-        alert("Tu texto no ha pasado el filtro de moderación automática. Por favor, revisa el contenido.");
-        setIsPublishing(false);
-        return;
-      }
-
       const path = 'publications';
       try {
         await addDoc(collection(db, path), {
@@ -155,7 +139,7 @@ export default function App() {
           authorName: user.displayName || 'Anónimo',
           content: writingContent,
           createdAt: serverTimestamp(),
-          isModerated: true
+          isModerated: true // Published directly, admin can manage later
         });
       } catch (error) {
         handleFirestoreError(error, OperationType.CREATE, path);
@@ -301,6 +285,29 @@ export default function App() {
     );
   };
 
+  const isAdmin = user?.email === 'lavozdelosmuertos@gmail.com';
+
+  const handleDelete = async (pubId: string) => {
+    if (!window.confirm('¿Estás seguro de que quieres borrar esta publicación?')) return;
+    try {
+      await deleteDoc(doc(db, 'publications', pubId));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `publications/${pubId}`);
+    }
+  };
+
+  const handleEdit = async (pub: Publication) => {
+    const newContent = window.prompt('Editar contenido:', pub.content);
+    if (newContent === null || newContent === pub.content) return;
+    try {
+      await updateDoc(doc(db, 'publications', pub.id), {
+        content: newContent
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `publications/${pub.id}`);
+    }
+  };
+
   const renderGallery = () => (
     <div className="max-w-5xl mx-auto px-4 py-12">
       <div className="flex justify-between items-end mb-12">
@@ -337,8 +344,26 @@ export default function App() {
                 key={pub.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="card p-8 md:p-10"
+                className="card p-8 md:p-10 relative group"
               >
+                {isAdmin && (
+                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => handleEdit(pub)}
+                      className="p-2 bg-stone-100 hover:bg-indigo-100 text-stone-600 hover:text-indigo-600 rounded-full transition-colors"
+                      title="Editar"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(pub.id)}
+                      className="p-2 bg-stone-100 hover:bg-red-100 text-stone-600 hover:text-red-600 rounded-full transition-colors"
+                      title="Borrar"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">
