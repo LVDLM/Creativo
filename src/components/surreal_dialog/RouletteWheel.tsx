@@ -8,9 +8,11 @@ interface RouletteWheelProps {
   onFinish: () => void;
   index: number;
   total: number;
+  theme?: 'modern' | 'organic' | 'minimal';
 }
 
-const RouletteWheel: React.FC<RouletteWheelProps> = ({ targetWord, isSpinning, delay, onFinish, index, total }) => {
+const RouletteWheel: React.FC<RouletteWheelProps> = ({ targetWord, isSpinning, delay, onFinish, index, total, theme }) => {
+  const isMinimal = theme === 'minimal';
   const [isDone, setIsDone] = useState(false);
   const itemHeight = 56;
 
@@ -41,12 +43,20 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({ targetWord, isSpinning, d
 
   return (
     <div className="flex flex-col items-center w-full max-w-[140px] md:max-w-[180px]">
-      <div className="text-[10px] md:text-xs font-black text-indigo-600 mb-2 md:mb-4 uppercase tracking-tighter bg-white px-2 py-0.5 md:py-1 rounded-md border-2 border-black shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+      <div className={`text-[10px] md:text-xs font-black mb-2 md:mb-4 uppercase tracking-tighter px-2 py-0.5 md:py-1 border-2 border-black ${
+        isMinimal 
+          ? 'bg-white text-[#1C1510] rounded-[2px] shadow-sm [font-variant:small-caps]' 
+          : 'bg-white text-indigo-600 rounded-md shadow-[2px_2px_0px_rgba(0,0,0,1)]'
+      }`}>
         P{index + 1}
       </div>
       
       <div className="relative w-full">
-        <div className="relative w-full h-[56px] bg-white rounded-xl md:rounded-2xl overflow-hidden border-[2px] md:border-[3px] border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] md:shadow-[6px_6px_0px_rgba(0,0,0,1)] z-10">
+        <div className={`relative w-full h-[56px] bg-white overflow-hidden border-2 border-black z-10 ${
+          isMinimal 
+            ? 'rounded-[2px] shadow-sm' 
+            : 'rounded-xl md:rounded-2xl shadow-[4px_4px_0px_rgba(0,0,0,1)] md:shadow-[6px_6px_0px_rgba(0,0,0,1)]'
+        }`}>
           <div 
             className="flex flex-col"
             style={transitionStyle}
@@ -56,7 +66,9 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({ targetWord, isSpinning, d
                 key={i} 
                 style={{ height: `${itemHeight}px` }}
                 className={`flex items-center justify-center text-sm md:text-lg font-bold leading-none select-none transition-all duration-300 px-2 text-center ${
-                  isDone && i === finalIndexInList ? 'text-black scale-105' : 'text-slate-300'
+                  isDone && i === finalIndexInList 
+                    ? isMinimal ? 'text-[#1C1510] scale-105' : 'text-black scale-105' 
+                    : isMinimal ? 'text-[#C8C2B4]' : 'text-slate-300'
                 }`}
               >
                 {word}

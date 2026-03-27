@@ -4,9 +4,11 @@
   --font-serif: "Cormorant Garamond", serif;
   --font-sans: "Inter", sans-serif;
   --font-display: "Outfit", sans-serif;
+  --font-editorial: "Playfair Display", serif;
+  --font-body: "Libre Baskerville", serif;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
 
 /* Base Styles */
 body {
@@ -33,6 +35,25 @@ body {
   --card-bg: #ffffff;
   --font-main: var(--font-display);
   --radius: 28px;
+}
+
+/* Theme: Minimal (Literary Magazine Style) */
+.theme-minimal {
+  --bg: #F7F4EE; /* Warm cream */
+  --ink: #1C1510; /* Warm black */
+  --text-secondary: #5A5040; /* Dark brown */
+  --text-tertiary: #8A8070; /* Sepia */
+  --line: #C8C2B4; /* Soft line */
+  --aside-bg: #EDE8DF; /* Light grey/brown */
+  --accent: #4A3728; /* Ink brown */
+  --card-bg: #ffffff;
+  --font-main: var(--font-body);
+  --radius: 2px;
+}
+
+.theme-minimal .card:hover {
+  border-color: var(--line);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 body {

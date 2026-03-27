@@ -5,7 +5,7 @@ import { WritingArea } from './WritingArea';
 import { User } from 'firebase/auth';
 
 interface WeatherActionLabProps {
-  theme: 'modern' | 'organic';
+  theme: 'modern' | 'organic' | 'minimal';
   user: User | null;
   writingContent: string;
   setWritingContent: (content: string) => void;
@@ -60,13 +60,15 @@ export const WeatherActionLab: React.FC<WeatherActionLabProps> = ({
     rollAll();
   }, [diceCount]);
 
+  const isMinimal = theme === 'minimal';
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className={`max-w-4xl mx-auto p-6 ${isMinimal ? 'font-body text-[#1C1510]' : ''}`}>
       <div className="text-center mb-12">
-        <h2 className={`text-4xl font-bold mb-4 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>
+        <h2 className={`${isMinimal ? 'font-editorial text-[32px] md:text-[42px] leading-tight' : 'text-4xl font-bold'} mb-4 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>
           Tiempo y Acciones
         </h2>
-        <p className="opacity-60 max-w-xl mx-auto italic">
+        <p className={`max-w-xl mx-auto italic ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>
           Combina el tiempo atmosférico con acciones cotidianas para crear historias únicas.
         </p>
       </div>
@@ -74,18 +76,18 @@ export const WeatherActionLab: React.FC<WeatherActionLabProps> = ({
       {/* Controls */}
       <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-12">
         <div className="flex items-center gap-4">
-          <span className="text-sm font-bold uppercase tracking-widest opacity-40">Dados:</span>
-          <div className={`flex items-center rounded-full p-1 ${theme === 'modern' ? 'bg-indigo-50' : 'bg-stone-100'}`}>
+          <span className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#8A8070] [font-variant:small-caps]' : 'opacity-40'}`}>Dados:</span>
+          <div className={`flex items-center p-1 ${isMinimal ? 'bg-[#EDE8DF] rounded-[2px]' : theme === 'modern' ? 'bg-indigo-50 rounded-full' : 'bg-stone-100 rounded-full'}`}>
             <button 
               onClick={() => setDiceCount(Math.max(1, diceCount - 1))}
-              className="p-2 hover:bg-white rounded-full transition-colors"
+              className={`p-2 transition-colors ${isMinimal ? 'hover:bg-white rounded-[2px]' : 'hover:bg-white rounded-full'}`}
             >
               <Minus className="w-4 h-4" />
             </button>
             <span className="w-12 text-center font-bold text-xl">{diceCount}</span>
             <button 
               onClick={() => setDiceCount(Math.min(10, diceCount + 1))}
-              className="p-2 hover:bg-white rounded-full transition-colors"
+              className={`p-2 transition-colors ${isMinimal ? 'hover:bg-white rounded-[2px]' : 'hover:bg-white rounded-full'}`}
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -94,13 +96,15 @@ export const WeatherActionLab: React.FC<WeatherActionLabProps> = ({
 
         <button 
           onClick={rollAll}
-          className={`flex items-center gap-2 px-8 py-3 rounded-full font-bold transition-all transform active:scale-95 ${
-            theme === 'modern' 
-              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700' 
-              : 'bg-stone-800 text-white hover:bg-stone-900'
+          className={`flex items-center gap-2 px-8 py-3 font-bold transition-all transform active:scale-95 ${
+            isMinimal
+              ? 'bg-[#1C1510] text-[#F7F4EE] rounded-[2px] text-[12px] tracking-[0.06em]'
+              : theme === 'modern' 
+              ? 'bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-200 hover:bg-indigo-700' 
+              : 'bg-stone-800 text-white rounded-full hover:bg-stone-900'
           }`}
         >
-          <RefreshCw className={`w-5 h-5 ${isRolling ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${isRolling ? 'animate-spin' : ''}`} />
           NUEVA HISTORIA
         </button>
       </div>
@@ -119,8 +123,12 @@ export const WeatherActionLab: React.FC<WeatherActionLabProps> = ({
               className="relative cursor-pointer group"
             >
               <div 
-                className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-4 border-black flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform overflow-hidden"
-                style={{ backgroundColor: die.color }}
+                className={`w-20 h-20 md:w-24 md:h-24 flex items-center justify-center transition-transform overflow-hidden ${
+                  isMinimal 
+                    ? 'bg-white border border-[#C8C2B4] rounded-[2px] shadow-sm' 
+                    : 'rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
+                }`}
+                style={isMinimal ? {} : { backgroundColor: die.color }}
               >
                 <img 
                   src={`/tiempoacciones/${die.icon}`} 
@@ -146,6 +154,7 @@ export const WeatherActionLab: React.FC<WeatherActionLabProps> = ({
         publishSuccess={publishSuccess}
         onLogin={onLogin}
         placeholder="Escribe tu historia integrando el tiempo y las acciones de los dados..."
+        theme={theme}
       />
     </div>
   );

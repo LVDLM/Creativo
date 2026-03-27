@@ -7,7 +7,11 @@ export const CHALLENGES: Challenge[] = [
     description: 'Escribe un texto con el máximo número de palabras esdrújulas.',
     example: 'Altísimos ánimos mayúsculos a los héroes. Recibámoslos cálidamente.',
     category: 'Juegos de Acentuación',
-    icon: 'Zap'
+    icon: 'Zap',
+    difficulty: 'Fácil',
+    duration: '5 min',
+    color: '#FF6B6B',
+    tags: ['Acentuación', 'Juego', '5 min']
   },
   {
     id: 'autobus-calambur',
@@ -15,7 +19,11 @@ export const CHALLENGES: Challenge[] = [
     description: 'En el calambur, lo escrito se puede leer de dos maneras, según juntemos sonidos. ¿Podéis crear al menos dos ejemplos?',
     example: 'Si quieres que te lo diga, espera. / Oro parece, plata no es.',
     category: 'Calambur',
-    icon: 'Bus'
+    icon: 'Bus',
+    difficulty: 'Media',
+    duration: '10 min',
+    color: '#4ECDC4',
+    tags: ['Juego de palabras', 'Ingenio', '10 min']
   },
   {
     id: 'en-el-tren-verde',
@@ -23,7 +31,11 @@ export const CHALLENGES: Challenge[] = [
     description: 'Con el monovocalismo intentamos crear textos usando solamente una vocal. ¿Os veis capaces?',
     example: 'Adán masca la manzana amarga, la traga, la carga ya cada garganta.',
     category: 'Monovocalismo',
-    icon: 'Train'
+    icon: 'Train',
+    difficulty: 'Difícil',
+    duration: '15 min',
+    color: '#45B7D1',
+    tags: ['Restricción', 'Vocales', '15 min']
   },
   {
     id: 'de-una-palabra-un-texto',
@@ -31,7 +43,11 @@ export const CHALLENGES: Challenge[] = [
     description: 'Escribe una palabra en vertical. De cada una de las letras, empieza un verso o una frase corta. Al terminar, un acróstico debería asomar.',
     example: 'Mirada llena de cielo tiene:\nAmaneceres en su pupila de\nInalcanzables estrellas llena.\nTe lleva, siempre, inevitable\nEl universo a la sonrisa.',
     category: 'Acróstico',
-    icon: 'Type'
+    icon: 'Type',
+    difficulty: 'Media',
+    duration: '10 min',
+    color: '#26DE81',
+    tags: ['Poesía', 'Estructura', '10 min']
   },
   {
     id: 'pequeno-y-con-sentido',
@@ -39,23 +55,35 @@ export const CHALLENGES: Challenge[] = [
     description: 'Veamos quién consigue hacer la oración más larga usando solo palabras monosílabas.',
     example: 'La que se ve es la sal del mar.',
     category: 'Monosílabos',
-    icon: 'Minimize2'
+    icon: 'Minimize2',
+    difficulty: 'Fácil',
+    duration: '5 min',
+    color: '#FED330',
+    tags: ['Brevedad', 'Léxico', '5 min']
   },
   {
     id: 'muchos-significados',
     title: 'Muchos Significados',
     description: 'Elige palabras polisémicas y usa cada una de ellas en dos oraciones donde signifique cosas diferentes.',
-    example: 'Con un pico escaló muy arriba / Hasta que el pico conquistó. / No cierra el pico la tía / cincuenta veces y pico ya lo contó.',
+    example: 'Con un pico escaló muy arriba.\nHasta que el pico conquistó.\nNo cierra el pico la tía,\ncincuenta veces y pico ya lo contó.',
     category: 'Polisemia',
-    icon: 'Layers'
+    icon: 'Layers',
+    difficulty: 'Media',
+    duration: '10 min',
+    color: '#FF8A5B',
+    tags: ['Semántica', 'Vocabulario', '10 min']
   },
   {
     id: 'mezclar-y-revolver',
     title: 'Mezclar y Revolver',
     description: 'Elegid una de las siguientes palabras y escribid todos los anagramas que seáis capaces de encontrar: Roma, Leo, Renacer, Cabra, Cosa.',
-    example: 'Sergio -> Riesgo / Roma -> Amor, Mora, Armo.',
+    example: 'Sergio -> Riesgo\nRoma -> Amor, Mora, Armo.',
     category: 'Anagramas',
-    icon: 'Shuffle'
+    icon: 'Shuffle',
+    difficulty: 'Fácil',
+    duration: '5 min',
+    color: '#A55EEA',
+    tags: ['Anagramas', 'Letras', '5 min']
   },
   {
     id: 'ponte-si-puedes',
@@ -63,8 +91,30 @@ export const CHALLENGES: Challenge[] = [
     description: 'Un reto dinámico que te propone diferentes escenarios y condiciones aleatorias para poner a prueba tu versatilidad.',
     example: 'Haz clic en el botón de aleatorizar para obtener tu misión.',
     category: 'Reto Dinámico',
-    icon: 'Dices'
+    icon: 'Dices',
+    difficulty: 'Media',
+    duration: 'Variable',
+    color: '#34495E',
+    tags: ['Creatividad', 'Personajes', 'Inspiración']
   }
+];
+
+export const STARTING_PHRASES = [
+  "Aquel martes, el cielo decidió cambiar de color...",
+  "Nunca imaginé que una simple llave abriría esa puerta.",
+  "El silencio en la biblioteca era casi ensordecedor.",
+  "Había algo extraño en la forma en que el gato me miraba.",
+  "La última carta llegó con un sello que no reconocí.",
+  "A las tres de la mañana, el teléfono sonó por fin.",
+  "El mapa indicaba un lugar que no debería existir.",
+  "Sus pasos resonaban en el pasillo vacío.",
+  "Todo comenzó con una pequeña mentira piadosa.",
+  "El olor a café recién hecho inundaba la estancia.",
+  "La maleta estaba abierta, pero no faltaba nada.",
+  "Aquel tren nunca llegaba a su destino.",
+  "La sombra en la pared no se movía con él.",
+  "El espejo devolvió una imagen que no era la suya.",
+  "Un sobre azul esperaba bajo el limpiaparabrisas."
 ];
 
 export const PONTE_SUB_PROMPTS = [

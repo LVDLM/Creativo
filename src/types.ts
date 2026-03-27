@@ -5,6 +5,10 @@ export interface Challenge {
   example: string;
   category: string;
   icon?: string;
+  difficulty?: 'Fácil' | 'Media' | 'Difícil';
+  duration?: string;
+  color?: string;
+  tags?: string[];
 }
 
 export interface Publication {
