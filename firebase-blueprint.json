@@ -48,6 +48,19 @@
         "role": { "type": "string", "enum": ["admin", "user"] }
       },
       "required": ["displayName", "email", "role"]
+    },
+    "ContactMessage": {
+      "title": "ContactMessage",
+      "description": "A message sent through the contact form.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "message", "createdAt"]
     }
   },
   "firestore": {
@@ -58,6 +71,10 @@
     "/users/{userId}": {
       "schema": "User",
       "description": "User profile data."
+    },
+    "/contact_messages/{messageId}": {
+      "schema": "ContactMessage",
+      "description": "Messages sent by users via the contact form."
     }
   }
 }

@@ -20,6 +20,9 @@ import { MicroStoryLab } from './components/MicroStoryLab';
 import { WeatherActionLab } from './components/WeatherActionLab';
 import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
 import { WritingArea } from './components/WritingArea';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsAndConditions from './components/TermsAndConditions';
+import ContactForm from './components/ContactForm';
 import { 
   Zap, 
   Bus, 
@@ -86,7 +89,7 @@ export default function App() {
   const [theme, setTheme] = useState<'organic' | 'modern' | 'minimal'>('minimal');
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [pontePrompt, setPontePrompt] = useState<any>(null);
-  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab'>('home');
+  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'privacy' | 'terms' | 'contact'>('home');
   const [publications, setPublications] = useState<Publication[]>([]);
   const [writingContent, setWritingContent] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
@@ -1055,6 +1058,9 @@ export default function App() {
             {view === 'challenge' && renderChallenge()}
             {view === 'gallery' && renderGallery()}
             {view === 'lab' && renderLab()}
+            {view === 'privacy' && <PrivacyPolicy onBack={() => setView('home')} theme={theme} />}
+            {view === 'terms' && <TermsAndConditions onBack={() => setView('home')} theme={theme} />}
+            {view === 'contact' && <ContactForm onBack={() => setView('home')} theme={theme} user={user} />}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -1066,9 +1072,9 @@ export default function App() {
             <p className="opacity-40 text-sm italic">Cultivando el jardín de las palabras.</p>
           </div>
           <div className="flex gap-8 text-sm opacity-40 sans">
-            <a href="#" className="hover:opacity-100 transition-opacity">Privacidad</a>
-            <a href="#" className="hover:opacity-100 transition-opacity">Términos</a>
-            <a href="#" className="hover:opacity-100 transition-opacity">Contacto</a>
+            <button onClick={() => setView('privacy')} className="hover:opacity-100 transition-opacity">Privacidad</button>
+            <button onClick={() => setView('terms')} className="hover:opacity-100 transition-opacity">Términos</button>
+            <button onClick={() => setView('contact')} className="hover:opacity-100 transition-opacity">Contacto</button>
           </div>
           <p className="text-xs opacity-30 sans">© 2026 Ponte Creativo. Todos los derechos reservados.</p>
         </div>

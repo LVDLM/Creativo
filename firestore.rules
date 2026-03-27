@@ -21,6 +21,15 @@
 //   - photoURL: string (optional) - User's photo
 //   - role: string (required, enum: ['admin', 'user']) - User's role
 //
+// Collection: contact_messages
+// Document ID: auto-generated
+// Fields:
+//   - name: string (required) - Sender's name
+//   - email: string (required) - Sender's email
+//   - subject: string (optional) - Message subject
+//   - message: string (required, max 5000 chars) - Message content
+//   - createdAt: timestamp (required) - Creation time
+//
 // ===============================================================
 
 rules_version = '2';
@@ -72,6 +81,15 @@ service cloud.firestore {
              (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() < 500));
     }
 
+    function isValidContactMessage(data) {
+      return data.keys().hasAll(['name', 'email', 'message', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.message is string && data.message.size() > 0 && data.message.size() < 5000 &&
+             data.createdAt == request.time &&
+             (!('subject' in data) || data.subject == null || (data.subject is string && data.subject.size() < 200));
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -97,6 +115,14 @@ service cloud.firestore {
       // Users can create/update their own profile, but cannot set themselves as admin
       allow create: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'user' || isAdmin());
       allow update: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+
+    match /contact_messages/{msgId} {
+      // Anyone can create a contact message
+      allow create: if isValidContactMessage(request.resource.data);
+      
+      // Only admins can read contact messages
+      allow read: if isAdmin();
     }
 
     // Default deny
