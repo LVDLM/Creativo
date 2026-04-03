@@ -60,7 +60,8 @@ import {
   Layout,
   Palette,
   Sparkle,
-  Heart
+  Heart,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -102,6 +103,8 @@ export default function App() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [galleryFilter, setGalleryFilter] = useState<string>('all');
+  const [authorFilter, setAuthorFilter] = useState<string | null>(null);
+  const [authorNameFilter, setAuthorNameFilter] = useState<string | null>(null);
   const [showExamples, setShowExamples] = useState(false);
   const [openFilterDropdown, setOpenFilterDropdown] = useState<'retos' | 'lab' | null>(null);
   const [currentPhrase, setCurrentPhrase] = useState(STARTING_PHRASES[0]);
@@ -349,9 +352,9 @@ export default function App() {
             Ponte Creativo
           </div>
           <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-            <button onClick={() => { setView('home'); setActivePillFilter('Retos'); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-            <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-            <button onClick={() => setView('gallery')} className="hover:text-[#1C1510] transition-colors">Galería</button>
+            <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+            <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+            <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
           </div>
         </nav>
 
@@ -506,9 +509,9 @@ export default function App() {
               Ponte Creativo
             </div>
             <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-              <button onClick={() => setView('home')} className="hover:text-[#1C1510] transition-colors">Retos</button>
-              <button onClick={() => setView('lab')} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-              <button onClick={() => setView('gallery')} className="hover:text-[#1C1510] transition-colors">Galería</button>
+              <button onClick={() => { setView('home'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+              <button onClick={() => { setView('lab'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
             </div>
           </nav>
           <div className="max-w-4xl mx-auto px-6 py-16">
@@ -800,13 +803,14 @@ export default function App() {
       return labToolIds.includes(pub.challengeId) ? 'laboratorio' : 'reto';
     };
 
-    const filteredPubs = galleryFilter === 'all' 
+    const filteredPubs = (galleryFilter === 'all' 
       ? publications 
       : galleryFilter === 'retos'
       ? publications.filter(p => getPubType(p) === 'reto')
       : galleryFilter === 'laboratorio'
       ? publications.filter(p => getPubType(p) === 'laboratorio')
-      : [...publications].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
+      : [...publications].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0)))
+      .filter(p => authorFilter ? p.authorId === authorFilter : true);
 
     const getCategoryColor = (challengeId: string) => {
       const challenge = CHALLENGES.find(c => c.id === challengeId);
@@ -835,9 +839,9 @@ export default function App() {
               Ponte Creativo
             </div>
             <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-              <button onClick={() => setView('home')} className="hover:text-[#1C1510] transition-colors">Retos</button>
-              <button onClick={() => setView('lab')} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-              <button onClick={() => setView('gallery')} className="hover:text-[#1C1510] transition-colors">Galería</button>
+              <button onClick={() => { setView('home'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+              <button onClick={() => { setView('lab'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
             </div>
           </nav>
         )}
@@ -853,11 +857,15 @@ export default function App() {
           </div>
 
           {/* Sistema de filtros (Píldoras fijas) */}
-          <div className="flex items-center gap-[6px] mb-8">
+          <div className="flex flex-wrap items-center gap-[6px] mb-8">
             {['all', 'retos', 'laboratorio', 'valorados'].map((filter) => (
               <button
                 key={filter}
-                onClick={() => setGalleryFilter(filter as any)}
+                onClick={() => {
+                  setGalleryFilter(filter as any);
+                  // Optional: clear author filter when changing category? 
+                  // Let's keep it for now as it's more powerful.
+                }}
                 className={`px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all ${
                   galleryFilter === filter
                     ? 'bg-[#1C1510] text-[#F7F4EE]'
@@ -867,6 +875,21 @@ export default function App() {
                 {filter === 'all' ? 'Todos' : filter === 'retos' ? 'Retos' : filter === 'laboratorio' ? 'Laboratorio' : 'Más valorados'}
               </button>
             ))}
+
+            {authorFilter && (
+              <div className="flex items-center gap-2 ml-auto bg-[#1C1510] text-[#F7F4EE] px-3 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest animate-in fade-in slide-in-from-right-4">
+                <span>Autor: {authorNameFilter}</span>
+                <button 
+                  onClick={() => {
+                    setAuthorFilter(null);
+                    setAuthorNameFilter(null);
+                  }}
+                  className="hover:text-red-400 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Contador de resultados */}
@@ -957,11 +980,21 @@ export default function App() {
 
                   {/* Pie de tarjeta */}
                   <div className="pt-4 border-t border-[#E8E6E0] flex justify-between items-center">
-                    <div className="flex items-center gap-[8px]">
-                      <div className="w-6 h-6 rounded-full bg-[#EDE8DF] border-[0.5px] border-[#C8C2B4] flex items-center justify-center text-[10px] font-bold text-[#8A8070] font-body">
+                    <div 
+                      className="flex items-center gap-[8px] cursor-pointer group/author"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAuthorFilter(pub.authorId);
+                        setAuthorNameFilter(pub.authorName);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      <div className="w-6 h-6 rounded-full bg-[#EDE8DF] border-[0.5px] border-[#C8C2B4] flex items-center justify-center text-[10px] font-bold text-[#8A8070] font-body group-hover/author:bg-[#1C1510] group-hover/author:text-[#F7F4EE] transition-colors">
                         {initials}
                       </div>
-                      <span className="text-[12px] text-[#8A8070] font-body">{pub.authorName}</span>
+                      <span className="text-[12px] text-[#8A8070] font-body group-hover/author:text-[#1C1510] group-hover/author:underline decoration-dotted underline-offset-4 transition-all">
+                        {pub.authorName}
+                      </span>
                     </div>
                     
                     <div className="flex items-center gap-4">
@@ -1144,9 +1177,9 @@ export default function App() {
               Ponte Creativo
             </div>
             <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-              <button onClick={() => setView('home')} className="hover:text-[#1C1510] transition-colors">Retos</button>
-              <button onClick={() => setView('lab')} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-              <button onClick={() => setView('gallery')} className="hover:text-[#1C1510] transition-colors">Galería</button>
+              <button onClick={() => { setView('home'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+              <button onClick={() => { setView('lab'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
             </div>
           </nav>
         )}
@@ -1272,9 +1305,9 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-6 sans text-sm font-medium">
-            <button onClick={() => { setView('home'); setActivePillFilter('Retos'); }} className={`hover:opacity-100 transition-all ${view === 'home' && activePillFilter === 'Retos' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Retos</button>
-            <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); }} className={`hover:opacity-100 transition-all ${view === 'home' && activePillFilter === 'Laboratorio' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Laboratorio</button>
-            <button onClick={() => setView('gallery')} className={`hover:opacity-100 transition-all ${view === 'gallery' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Galería</button>
+            <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'home' && activePillFilter === 'Retos' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Retos</button>
+            <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'home' && activePillFilter === 'Laboratorio' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Laboratorio</button>
+            <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'gallery' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Galería</button>
             {user ? (
               <div className="flex items-center gap-4">
                 <span className="hidden md:inline opacity-40">Hola, {user.displayName?.split(' ')[0]}</span>
