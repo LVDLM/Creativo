@@ -92,6 +92,7 @@ export default function App() {
   const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'privacy' | 'terms' | 'contact'>('home');
   const [publications, setPublications] = useState<Publication[]>([]);
   const [writingContent, setWritingContent] = useState('');
+  const [pseudonym, setPseudonym] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [galleryFilter, setGalleryFilter] = useState<string>('all');
@@ -99,6 +100,50 @@ export default function App() {
   const [openFilterDropdown, setOpenFilterDropdown] = useState<'retos' | 'lab' | null>(null);
   const [currentPhrase, setCurrentPhrase] = useState(STARTING_PHRASES[0]);
   const [activePillFilter, setActivePillFilter] = useState('Todos');
+
+  const LAB_ACTIVITIES: (Challenge & { isLab?: boolean; labId?: string })[] = [
+    {
+      id: 'lab-micro-story',
+      title: 'Microhistorias',
+      description: 'Genera letras aleatorias y desafía tu mente a crear oraciones coherentes bajo presión creativa.',
+      difficulty: 'Variable',
+      duration: '5 min',
+      category: 'Laboratorio',
+      icon: 'Type',
+      example: 'A B C... "Antes Buscaba Caminos"',
+      isLab: true,
+      labId: 'microstory',
+      tags: ['Laboratorio', 'Letras', '5 min']
+    },
+    {
+      id: 'lab-weather-action',
+      title: 'Tiempo y Acciones',
+      description: 'Combina el tiempo atmosférico con acciones variadas para inspirar tus relatos más dinámicos.',
+      difficulty: 'Fácil',
+      duration: '10 min',
+      category: 'Laboratorio',
+      icon: 'CloudSun',
+      example: 'Llueve mientras alguien corre hacia un refugio...',
+      isLab: true,
+      labId: 'weatheraction',
+      tags: ['Laboratorio', 'Escenarios', '10 min']
+    },
+    {
+      id: 'lab-surreal-dialog',
+      title: 'Diálogos Surrealistas',
+      description: 'Genera personajes absurdos y crea conversaciones imposibles entre objetos y conceptos.',
+      difficulty: 'Media',
+      duration: '15 min',
+      category: 'Laboratorio',
+      icon: 'MessageSquare',
+      example: 'Un paraguas discute con el concepto de la soledad.',
+      isLab: true,
+      labId: 'surrealdialog',
+      tags: ['Laboratorio', 'Personajes', '15 min']
+    }
+  ];
+
+  const ALL_ACTIVITIES = [...LAB_ACTIVITIES, ...CHALLENGES];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -153,7 +198,7 @@ export default function App() {
           challengeId: labToolId || activeChallenge?.id,
           subTitle: pontePrompt?.title || null,
           authorId: user.uid,
-          authorName: user.displayName || 'Anónimo',
+          authorName: pseudonym.trim() || user.displayName || 'Anónimo',
           content: writingContent,
           createdAt: serverTimestamp(),
           isModerated: true // Published directly, admin can manage later
@@ -169,6 +214,7 @@ export default function App() {
         setActiveChallenge(null);
         setActiveLabTool(null);
         setWritingContent('');
+        setPseudonym('');
       }, 2000);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'publications');
@@ -243,14 +289,14 @@ export default function App() {
   };
 
   const renderMinimalHome = () => {
-    const pills = ['Todos', 'Retos', 'Laboratorio', '5 min', '10 min', 'Personajes', 'Poesía'];
-    const filteredChallenges = activePillFilter === 'Todos' 
-      ? CHALLENGES 
+    const pills = ['Todos', 'Laboratorio', 'Retos', '5 min', '10 min', 'Personajes', 'Poesía'];
+    const filteredActivities = activePillFilter === 'Todos' 
+      ? ALL_ACTIVITIES 
       : activePillFilter === 'Retos'
       ? CHALLENGES
       : activePillFilter === 'Laboratorio'
-      ? [] // Laboratorio tools are separate components
-      : CHALLENGES.filter(c => 
+      ? LAB_ACTIVITIES
+      : ALL_ACTIVITIES.filter(c => 
           c.duration === activePillFilter || 
           c.tags?.includes(activePillFilter) ||
           c.category.includes(activePillFilter)
@@ -274,8 +320,8 @@ export default function App() {
             Ponte Creativo
           </div>
           <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-            <button onClick={() => setView('home')} className="hover:text-[#1C1510] transition-colors">Retos</button>
-            <button onClick={() => setView('lab')} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+            <button onClick={() => { setView('home'); setActivePillFilter('Retos'); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+            <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
             <button onClick={() => setView('gallery')} className="hover:text-[#1C1510] transition-colors">Galería</button>
           </div>
         </nav>
@@ -366,38 +412,45 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredChallenges.map((challenge, idx) => {
-                const Icon = ICON_MAP[challenge.icon || 'PenTool'] || PenTool;
+              {filteredActivities.map((activity, idx) => {
+                const Icon = ICON_MAP[activity.icon || 'PenTool'] || PenTool;
+                const isLab = 'isLab' in activity && activity.isLab;
+                
                 return (
                   <motion.div
-                    key={challenge.id}
+                    key={activity.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
                     onClick={() => {
-                      setActiveChallenge(challenge);
-                      setView('challenge');
+                      if (isLab && 'labId' in activity) {
+                        setActiveLabTool((activity as any).labId || null);
+                        setView('lab');
+                      } else {
+                        setActiveChallenge(activity as Challenge);
+                        setView('challenge');
+                      }
                     }}
                     className="group cursor-pointer bg-white border border-[#E8E6E0] p-6 rounded-[2px] hover:border-[#8F8E88] transition-all hover:shadow-sm relative"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#EDE8DF] rounded-[2px] text-[#8A8070]">
-                          {challenge.difficulty}
+                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-[2px] ${isLab ? 'bg-[#1C1510] text-[#F7F4EE]' : 'bg-[#EDE8DF] text-[#8A8070]'}`}>
+                          {isLab ? 'LAB' : activity.difficulty}
                         </span>
                         <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#EDE8DF] rounded-[2px] text-[#8A8070] flex items-center gap-1">
-                          <Clock className="w-2.5 h-2.5" /> {challenge.duration}
+                          <Clock className="w-2.5 h-2.5" /> {activity.duration}
                         </span>
                       </div>
                       <Icon className="w-5 h-5 text-[#C8C2B4] group-hover:text-[#1C1510] transition-colors" />
                     </div>
-                    <h3 className="font-editorial text-xl font-bold mb-3 leading-tight text-[#1C1510]">{challenge.title}</h3>
+                    <h3 className="font-editorial text-xl font-bold mb-3 leading-tight text-[#1C1510]">{activity.title}</h3>
                     <p className="text-[#5A5040] text-sm mb-6 leading-relaxed line-clamp-2 font-body">
-                      {challenge.description}
+                      {activity.description}
                     </p>
                     <div className="pt-4 border-t border-[#E8E6E0] opacity-0 group-hover:opacity-100 transition-all">
                       <p className="text-[10px] italic text-[#8A8070] mb-1 font-body">Ejemplo:</p>
-                      <p className="text-[#1C1510] text-xs font-body italic line-clamp-2">"{challenge.example}"</p>
+                      <p className="text-[#1C1510] text-xs font-body italic line-clamp-2">"{activity.example}"</p>
                     </div>
                   </motion.div>
                 );
@@ -416,6 +469,19 @@ export default function App() {
     if (theme === 'minimal') {
       return (
         <div className="bg-[#F7F4EE] min-h-screen font-body text-[#1C1510]">
+          <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
+            <div 
+              className="font-editorial font-bold text-[15px] cursor-pointer"
+              onClick={() => setView('home')}
+            >
+              Ponte Creativo
+            </div>
+            <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
+              <button onClick={() => setView('home')} className="hover:text-[#1C1510] transition-colors">Retos</button>
+              <button onClick={() => setView('lab')} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => setView('gallery')} className="hover:text-[#1C1510] transition-colors">Galería</button>
+            </div>
+          </nav>
           <div className="max-w-4xl mx-auto px-6 py-16">
             <button 
               onClick={() => {
@@ -474,6 +540,8 @@ export default function App() {
                     user={user}
                     writingContent={writingContent}
                     setWritingContent={setWritingContent}
+                    pseudonym={pseudonym}
+                    setPseudonym={setPseudonym}
                     onPublish={() => handlePublish()}
                     isPublishing={isPublishing}
                     publishSuccess={publishSuccess}
@@ -546,6 +614,8 @@ export default function App() {
               user={user}
               writingContent={writingContent}
               setWritingContent={setWritingContent}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
               onPublish={() => handlePublish()}
               isPublishing={isPublishing}
               publishSuccess={publishSuccess}
@@ -654,6 +724,7 @@ export default function App() {
 
   const renderGallery = () => {
     const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog'];
+    const isMinimal = theme === 'minimal';
     
     // Determine type for filtering
     const getPubType = (pub: Publication) => {
@@ -683,124 +754,147 @@ export default function App() {
     };
 
     return (
-      <div className="max-w-6xl mx-auto px-6 py-16">
-        {/* Cabecera de la sección */}
-        <div className="mb-10">
-          <h1 className="text-[26px] font-medium text-stone-900 mb-1">Galería pública</h1>
-          <p className="text-sm italic text-[#888780]">Inspiración compartida por nuestra comunidad.</p>
-        </div>
-
-        {/* Sistema de filtros (Píldoras fijas) */}
-        <div className="flex items-center gap-[6px] mb-5">
-          {['all', 'retos', 'laboratorio'].map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setGalleryFilter(filter as any)}
-              className={`px-4 py-[5px] rounded-full text-[13px] transition-all duration-[120ms] border ${
-                galleryFilter === filter
-                  ? 'bg-[#1A1A1A] text-white border-transparent font-medium'
-                  : 'bg-transparent text-[#888780] border-[#C8C6C0] hover:border-[#8F8E88] font-normal'
-              }`}
+      <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
+        {isMinimal && (
+          <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
+            <div 
+              className="font-editorial font-bold text-[15px] cursor-pointer"
+              onClick={() => setView('home')}
             >
-              {filter === 'all' ? 'Todos' : filter === 'retos' ? 'Retos' : 'Laboratorio'}
-            </button>
-          ))}
-        </div>
+              Ponte Creativo
+            </div>
+            <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
+              <button onClick={() => setView('home')} className="hover:text-[#1C1510] transition-colors">Retos</button>
+              <button onClick={() => setView('lab')} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => setView('gallery')} className="hover:text-[#1C1510] transition-colors">Galería</button>
+            </div>
+          </nav>
+        )}
+        <div className="max-w-6xl mx-auto px-6 py-16">
+          {/* Cabecera de la sección */}
+          <div className="mb-10">
+            <h1 className={`text-[26px] font-bold mb-1 ${isMinimal ? 'font-editorial text-[34px] md:text-[52px] leading-[1.05] tracking-[-0.02em]' : 'text-stone-900'}`}>
+              Galería pública
+            </h1>
+            <p className={`text-sm italic ${isMinimal ? 'text-[#8A8070] font-body' : 'text-[#888780]'}`}>
+              Inspiración compartida por nuestra comunidad.
+            </p>
+          </div>
 
-        {/* Contador de resultados */}
-        <div className="mb-4 text-[12px] text-[#AAAAAA]">
-          {filteredPubs.length} {filteredPubs.length === 1 ? 'entrada' : 'entradas'}
-        </div>
-
-        {/* Grid de tarjetas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-auto">
-          {filteredPubs.map((pub, index) => {
-            const isFeatured = galleryFilter === 'all' && index === 0;
-            const challenge = CHALLENGES.find(c => c.id === pub.challengeId);
-            const labToolNames: Record<string, string> = {
-              'lab-micro-story': 'Microhistorias',
-              'lab-weather-action': 'Tiempo y Acciones',
-              'lab-surreal-dialog': 'Diálogos Surrealistas'
-            };
-            const typeLabel = getPubType(pub) === 'laboratorio' ? 'Laboratorio' : 'Reto';
-            const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
-            const dotColor = getCategoryColor(pub.challengeId);
-            const initials = pub.authorName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-
-            return (
-              <motion.div
-                key={pub.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => navigateToSource(pub)}
-                className={`group cursor-pointer bg-white border border-[#E8E6E0] hover:border-[#8F8E88] rounded-xl p-[18px] pt-[18px] pb-[14px] flex flex-col transition-all duration-[150ms] ${
-                  isFeatured ? 'lg:col-span-2 bg-[#F6F5F2] border-[#C8C6C0]' : ''
+          {/* Sistema de filtros (Píldoras fijas) */}
+          <div className="flex items-center gap-[6px] mb-8">
+            {['all', 'retos', 'laboratorio'].map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setGalleryFilter(filter as any)}
+                className={`px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all ${
+                  galleryFilter === filter
+                    ? 'bg-[#1C1510] text-[#F7F4EE]'
+                    : 'bg-[#EDE8DF] text-[#8A8070] hover:bg-[#C8C2B4]'
                 }`}
               >
-                {/* Etiqueta de categoría */}
-                <div className="flex items-center gap-[5px] mb-2">
-                  <div 
-                    className="w-[6px] h-[6px] rounded-full" 
-                    style={{ backgroundColor: dotColor }}
-                  />
-                  <span className="text-[10px] uppercase tracking-[0.09em] text-[#888780]">
-                    {typeLabel}: {challengeTitle}
-                  </span>
-                </div>
+                {filter === 'all' ? 'Todos' : filter === 'retos' ? 'Retos' : 'Laboratorio'}
+              </button>
+            ))}
+          </div>
 
-                {/* Extracto del texto */}
-                <div className="flex-grow mb-3">
-                  <p className={`font-serif text-[#1A1A1A] leading-[1.6] whitespace-pre-wrap overflow-hidden ${
-                    isFeatured ? 'text-[15px] line-clamp-5' : 'text-[13px] line-clamp-4'
-                  }`}>
-                    {pub.content}
-                  </p>
-                </div>
+          {/* Contador de resultados */}
+          <div className={`mb-4 text-[12px] ${isMinimal ? 'text-[#8A8070] font-body uppercase tracking-widest' : 'text-[#AAAAAA]'}`}>
+            {filteredPubs.length} {filteredPubs.length === 1 ? 'entrada' : 'entradas'}
+          </div>
 
-                {/* Pie de tarjeta */}
-                <div className="pt-[9px] border-t border-[#E8E6E0] flex justify-between items-center">
-                  <div className="flex items-center gap-[6px]">
-                    <div className="w-5 h-5 rounded-full bg-[#F1EFE8] border-[0.5px] border-[#E0DED8] flex items-center justify-center text-[9px] font-medium text-[#888780]">
-                      {initials}
+          {/* Grid de tarjetas */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-auto">
+            {filteredPubs.map((pub, index) => {
+              const isFeatured = galleryFilter === 'all' && index === 0;
+              const challenge = CHALLENGES.find(c => c.id === pub.challengeId);
+              const labToolNames: Record<string, string> = {
+                'lab-micro-story': 'Microhistorias',
+                'lab-weather-action': 'Tiempo y Acciones',
+                'lab-surreal-dialog': 'Diálogos Surrealistas'
+              };
+              const typeLabel = getPubType(pub) === 'laboratorio' ? 'Laboratorio' : 'Reto';
+              const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
+              const dotColor = getCategoryColor(pub.challengeId);
+              const initials = pub.authorName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+              return (
+                <motion.div
+                  key={pub.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  onClick={() => navigateToSource(pub)}
+                  className={`group cursor-pointer bg-white border border-[#E8E6E0] hover:border-[#8F8E88] rounded-[2px] p-[24px] flex flex-col transition-all duration-[150ms] relative ${
+                    isFeatured ? 'lg:col-span-2' : ''
+                  }`}
+                >
+                  {/* Etiqueta de categoría */}
+                  <div className="flex items-center gap-[8px] mb-4">
+                    <div 
+                      className="w-[8px] h-[8px] rounded-full" 
+                      style={{ backgroundColor: dotColor }}
+                    />
+                    <span className="text-[10px] uppercase tracking-[0.12em] text-[#8A8070] font-body font-bold">
+                      {typeLabel}: {challengeTitle}
+                    </span>
+                  </div>
+
+                  {/* Extracto del texto */}
+                  <div className="flex-grow mb-6">
+                    <p className={`font-editorial text-[#1C1510] leading-[1.7] whitespace-pre-wrap overflow-hidden ${
+                      isFeatured ? 'text-[18px] line-clamp-6' : 'text-[15px] line-clamp-5'
+                    }`}>
+                      {pub.content}
+                    </p>
+                  </div>
+
+                  {/* Pie de tarjeta */}
+                  <div className="pt-4 border-t border-[#E8E6E0] flex justify-between items-center">
+                    <div className="flex items-center gap-[8px]">
+                      <div className="w-6 h-6 rounded-full bg-[#EDE8DF] border-[0.5px] border-[#C8C2B4] flex items-center justify-center text-[10px] font-bold text-[#8A8070] font-body">
+                        {initials}
+                      </div>
+                      <span className="text-[12px] text-[#8A8070] font-body">{pub.authorName}</span>
                     </div>
-                    <span className="text-[12px] text-[#888780]">{pub.authorName}</span>
+                    <span className="text-[11px] text-[#1C1510] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">
+                      Ir al reto →
+                    </span>
                   </div>
-                  <span className="text-[11px] text-indigo-600 font-medium">Ir al reto →</span>
-                </div>
-                
-                {isAdmin && (
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleEdit(pub); }}
-                      className="p-1.5 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-indigo-600"
-                    >
-                      <Edit3 className="w-3 h-3" />
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleDelete(pub.id); }}
-                      className="p-1.5 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-red-600"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-              </motion.div>
-            );
-          })}
+                  
+                  {isAdmin && (
+                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleEdit(pub); }}
+                        className="p-2 bg-white border border-[#E8E6E0] rounded-[2px] text-[#8A8070] hover:text-[#1C1510] hover:border-[#8F8E88]"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDelete(pub.id); }}
+                        className="p-2 bg-white border border-[#E8E6E0] rounded-[2px] text-[#8A8070] hover:text-red-600 hover:border-red-200"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
 
-          {/* Tarjeta CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            onClick={() => setView('home')}
-            className="border-[0.5px] border-dashed border-[#C8C6C0] rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[160px] cursor-pointer hover:bg-[#F6F5F2] transition-all duration-[150ms]"
-          >
-            <div className="w-7 h-7 rounded-full bg-[#F6F5F2] border-[0.5px] border-[#C8C6C0] flex items-center justify-center mb-3">
-              <Plus className="w-[14px] h-[14px] text-[#888780]" />
-            </div>
-            <p className="text-[13px] text-[#888780] font-medium mb-1">Añade tu texto a la galería</p>
-            <p className="text-[11px] text-[#AAAAAA]">Elige un reto y publica</p>
-          </motion.div>
+            {/* Tarjeta CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => setView('home')}
+              className="border border-dashed border-[#C8C2B4] rounded-[2px] p-8 flex flex-col items-center justify-center text-center min-h-[200px] cursor-pointer hover:bg-[#EDE8DF] transition-all duration-[150ms]"
+            >
+              <div className="w-10 h-10 rounded-full bg-[#F7F4EE] border border-[#C8C2B4] flex items-center justify-center mb-4">
+                <Plus className="w-5 h-5 text-[#8A8070]" />
+              </div>
+              <p className="text-[14px] text-[#1C1510] font-bold uppercase tracking-widest mb-1 font-body">Añade tu texto</p>
+              <p className="text-[12px] text-[#8A8070] font-body italic">Elige un reto y publica</p>
+            </motion.div>
+          </div>
         </div>
       </div>
     );
@@ -829,6 +923,8 @@ export default function App() {
               user={user}
               writingContent={writingContent}
               setWritingContent={setWritingContent}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
               onPublish={() => handlePublish('lab-micro-story')}
               isPublishing={isPublishing}
               publishSuccess={publishSuccess}
@@ -860,6 +956,8 @@ export default function App() {
               user={user}
               writingContent={writingContent}
               setWritingContent={setWritingContent}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
               onPublish={() => handlePublish('lab-weather-action')}
               isPublishing={isPublishing}
               publishSuccess={publishSuccess}
@@ -891,6 +989,8 @@ export default function App() {
               user={user}
               writingContent={writingContent}
               setWritingContent={setWritingContent}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
               onPublish={() => handlePublish('lab-surreal-dialog')}
               isPublishing={isPublishing}
               publishSuccess={publishSuccess}
@@ -906,6 +1006,21 @@ export default function App() {
 
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+        {isMinimal && (
+          <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
+            <div 
+              className="font-editorial font-bold text-[15px] cursor-pointer"
+              onClick={() => setView('home')}
+            >
+              Ponte Creativo
+            </div>
+            <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
+              <button onClick={() => setView('home')} className="hover:text-[#1C1510] transition-colors">Retos</button>
+              <button onClick={() => setView('lab')} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => setView('gallery')} className="hover:text-[#1C1510] transition-colors">Galería</button>
+            </div>
+          </nav>
+        )}
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="text-center mb-16">
             <h2 className={`${isMinimal ? 'font-editorial text-[42px] md:text-[64px] leading-[1.05] tracking-[-0.02em]' : 'text-5xl md:text-7xl font-bold'} mb-4 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>
@@ -994,7 +1109,7 @@ export default function App() {
 
   return (
     <div className={`min-h-screen flex flex-col theme-${theme}`}>
-      {!(view === 'home' && theme === 'minimal') && (
+      {theme !== 'minimal' && (
         <nav className={`sticky top-0 z-50 backdrop-blur-md border-b px-6 py-4 flex justify-between items-center transition-all duration-500 ${theme === 'modern' ? 'bg-white/70 border-indigo-50' : 'bg-white/80 border-stone-100'}`}>
           <div className="flex items-center gap-8">
             <div 
@@ -1020,7 +1135,7 @@ export default function App() {
                 </button>
                 <button 
                   onClick={() => setTheme('minimal')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${theme === 'minimal' ? 'bg-black text-white shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+                  className="px-4 py-1.5 rounded-full text-xs font-bold transition-all text-stone-400 hover:text-stone-600"
                 >
                   MÍNIMO
                 </button>
@@ -1028,8 +1143,8 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-6 sans text-sm font-medium">
-            <button onClick={() => setView('home')} className={`hover:opacity-100 transition-all ${view === 'home' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Retos</button>
-            <button onClick={() => setView('lab')} className={`hover:opacity-100 transition-all ${view === 'lab' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Laboratorio</button>
+            <button onClick={() => { setView('home'); setActivePillFilter('Retos'); }} className={`hover:opacity-100 transition-all ${view === 'home' && activePillFilter === 'Retos' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Retos</button>
+            <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); }} className={`hover:opacity-100 transition-all ${view === 'home' && activePillFilter === 'Laboratorio' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Laboratorio</button>
             <button onClick={() => setView('gallery')} className={`hover:opacity-100 transition-all ${view === 'gallery' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Galería</button>
             {user ? (
               <div className="flex items-center gap-4">

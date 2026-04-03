@@ -12,6 +12,8 @@ interface SurrealDialogLabProps {
   user: User | null;
   writingContent: string;
   setWritingContent: (content: string) => void;
+  pseudonym: string;
+  setPseudonym: (pseudonym: string) => void;
   onPublish: () => void;
   isPublishing: boolean;
   publishSuccess: boolean;
@@ -37,7 +39,7 @@ const Bubble: React.FC<{ style: React.CSSProperties, className?: string, content
 };
 
 export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({ 
-  theme, user, writingContent, setWritingContent, onPublish, isPublishing, publishSuccess, onLogin 
+  theme, user, writingContent, setWritingContent, pseudonym, setPseudonym, onPublish, isPublishing, publishSuccess, onLogin 
 }) => {
   const isMinimal = theme === 'minimal';
   const [numInterlocutors, setNumInterlocutors] = useState(2);
@@ -265,6 +267,8 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
           user={user}
           writingContent={writingContent}
           setWritingContent={setWritingContent}
+          pseudonym={pseudonym}
+          setPseudonym={setPseudonym}
           onPublish={onPublish}
           isPublishing={isPublishing}
           publishSuccess={publishSuccess}

@@ -5,7 +5,7 @@ export interface Challenge {
   example: string;
   category: string;
   icon?: string;
-  difficulty?: 'Fácil' | 'Media' | 'Difícil';
+  difficulty?: 'Fácil' | 'Media' | 'Difícil' | 'Variable';
   duration?: string;
   color?: string;
   tags?: string[];

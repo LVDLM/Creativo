@@ -6,6 +6,8 @@ interface WritingAreaProps {
   user: User | null;
   writingContent: string;
   setWritingContent: (content: string) => void;
+  pseudonym: string;
+  setPseudonym: (pseudonym: string) => void;
   onPublish: () => void;
   isPublishing: boolean;
   publishSuccess: boolean;
@@ -19,6 +21,8 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
   user,
   writingContent,
   setWritingContent,
+  pseudonym,
+  setPseudonym,
   onPublish,
   isPublishing,
   publishSuccess,
@@ -53,6 +57,22 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
         </div>
       ) : (
         <div className="space-y-6">
+          <div className="flex flex-col gap-2">
+            <label className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#8A8070] [font-variant:small-caps]' : 'opacity-40'}`}>
+              Publicar como (Seudónimo opcional):
+            </label>
+            <input
+              type="text"
+              value={pseudonym}
+              onChange={(e) => setPseudonym(e.target.value)}
+              placeholder={user.displayName || 'Tu nombre real'}
+              className={`w-full px-6 py-3 transition-all ${
+                isMinimal 
+                  ? 'border-[#C8C2B4] bg-white focus:border-[#1C1510] font-body text-[14px] rounded-[2px] text-[#1C1510]' 
+                  : 'border-stone-100 focus:border-stone-300 font-sans bg-stone-50/50 rounded-full'
+              }`}
+            />
+          </div>
           <textarea
             value={writingContent}
             onChange={(e) => setWritingContent(e.target.value)}

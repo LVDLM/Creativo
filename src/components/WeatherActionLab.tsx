@@ -9,6 +9,8 @@ interface WeatherActionLabProps {
   user: User | null;
   writingContent: string;
   setWritingContent: (content: string) => void;
+  pseudonym: string;
+  setPseudonym: (pseudonym: string) => void;
   onPublish: () => void;
   isPublishing: boolean;
   publishSuccess: boolean;
@@ -31,7 +33,7 @@ const ICONS = [
 ];
 
 export const WeatherActionLab: React.FC<WeatherActionLabProps> = ({ 
-  theme, user, writingContent, setWritingContent, onPublish, isPublishing, publishSuccess, onLogin 
+  theme, user, writingContent, setWritingContent, pseudonym, setPseudonym, onPublish, isPublishing, publishSuccess, onLogin 
 }) => {
   const [diceCount, setDiceCount] = useState(3);
   const [dice, setDice] = useState<IconDie[]>([]);
@@ -149,6 +151,8 @@ export const WeatherActionLab: React.FC<WeatherActionLabProps> = ({
         user={user}
         writingContent={writingContent}
         setWritingContent={setWritingContent}
+        pseudonym={pseudonym}
+        setPseudonym={setPseudonym}
         onPublish={onPublish}
         isPublishing={isPublishing}
         publishSuccess={publishSuccess}
