@@ -70,7 +70,8 @@ service cloud.firestore {
              data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
              data.createdAt == request.time &&
              data.isModerated is bool &&
-             (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200));
+             (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200)) &&
+             (!('likesCount' in data) || data.likesCount is int);
     }
 
     function isValidUser(data) {
@@ -79,6 +80,14 @@ service cloud.firestore {
              data.email is string && isValidEmail(data.email) &&
              data.role in ['admin', 'user'] &&
              (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() < 500));
+    }
+
+    function isValidLike(data, likeId) {
+      return data.keys().hasAll(['userId', 'publicationId', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.publicationId is string &&
+             likeId == request.auth.uid + "_" + data.publicationId &&
+             data.createdAt == request.time;
     }
 
     function isValidContactMessage(data) {
@@ -105,7 +114,13 @@ service cloud.firestore {
       allow delete: if isDocOwner() || isAdmin();
       
       // Admins can update publications (for manual moderation/editing)
-      allow update: if isAdmin(); 
+      // Users can increment likesCount if they have created a like document
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount']) &&
+        request.resource.data.likesCount == resource.data.likesCount + 1 &&
+        exists(/databases/$(database)/documents/likes/$(request.auth.uid + "_" + pubId))
+      );
     }
 
     match /users/{userId} {
@@ -115,6 +130,14 @@ service cloud.firestore {
       // Users can create/update their own profile, but cannot set themselves as admin
       allow create: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'user' || isAdmin());
       allow update: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+    
+    match /likes/{likeId} {
+      // Users can read their own likes
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can create a like if it's valid
+      allow create: if isAuthenticated() && isValidLike(request.resource.data, likeId);
     }
 
     match /contact_messages/{msgId} {

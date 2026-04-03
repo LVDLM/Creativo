@@ -20,6 +20,7 @@ export interface Publication {
   content: string;
   createdAt: any;
   isModerated: boolean;
+  likesCount?: number;
 }
 
 export enum OperationType {

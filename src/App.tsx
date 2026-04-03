@@ -10,7 +10,9 @@ import {
   doc,
   getDocFromServer,
   deleteDoc,
-  updateDoc
+  updateDoc,
+  setDoc,
+  increment
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db, loginWithGoogle, logout } from './firebase';
@@ -57,7 +59,8 @@ import {
   Calendar,
   Layout,
   Palette,
-  Sparkle
+  Sparkle,
+  Heart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -91,8 +94,11 @@ export default function App() {
   const [pontePrompt, setPontePrompt] = useState<any>(null);
   const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'privacy' | 'terms' | 'contact'>('home');
   const [publications, setPublications] = useState<Publication[]>([]);
+  const [userLikes, setUserLikes] = useState<Record<string, boolean>>({});
   const [writingContent, setWritingContent] = useState('');
   const [pseudonym, setPseudonym] = useState('');
+  const [editingPubId, setEditingPubId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [galleryFilter, setGalleryFilter] = useState<string>('all');
@@ -154,6 +160,28 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!user) {
+      setUserLikes({});
+      return;
+    }
+    const path = 'likes';
+    const q = query(collection(db, path), where('userId', '==', user.uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const likes: Record<string, boolean> = {};
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.publicationId) {
+          likes[data.publicationId] = true;
+        }
+      });
+      setUserLikes(likes);
+    }, (error) => {
+      console.error('Likes subscription error:', error);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  useEffect(() => {
     const path = 'publications';
     const q = query(
       collection(db, path), 
@@ -201,7 +229,8 @@ export default function App() {
           authorName: pseudonym.trim() || user.displayName || 'Anónimo',
           content: writingContent,
           createdAt: serverTimestamp(),
-          isModerated: true // Published directly, admin can manage later
+          isModerated: true, // Published directly, admin can manage later
+          likesCount: 0
         });
       } catch (error) {
         handleFirestoreError(error, OperationType.CREATE, path);
@@ -640,15 +669,55 @@ export default function App() {
     }
   };
 
-  const handleEdit = async (pub: Publication) => {
-    const newContent = window.prompt('Editar contenido:', pub.content);
-    if (newContent === null || newContent === pub.content) return;
+  const handleEdit = (pub: Publication) => {
+    setEditingPubId(pub.id);
+    setEditingContent(pub.content);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingPubId) return;
     try {
-      await updateDoc(doc(db, 'publications', pub.id), {
-        content: newContent
+      await updateDoc(doc(db, 'publications', editingPubId), {
+        content: editingContent
+      });
+      setEditingPubId(null);
+      setEditingContent('');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `publications/${editingPubId}`);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPubId(null);
+    setEditingContent('');
+  };
+
+  const handleLike = async (pubId: string) => {
+    if (!user) {
+      handleLogin();
+      return;
+    }
+
+    if (userLikes[pubId]) return; // Already liked, only positive rating allowed (no toggle mentioned, but "o se pulsa o no" usually implies one-way or just binary)
+    
+    // As per "valoración solo puede ser positiva", we'll implement it as a one-way like for now 
+    // to strictly follow "o se pulsa sobre el corazón o no" if it means "once liked, it's liked".
+    // But usually users expect to be able to undo. 
+    // Given "evitamos condicionar el voto positivo", once they see the count, they've already voted.
+    
+    try {
+      const likeId = `${user.uid}_${pubId}`;
+      await setDoc(doc(db, 'likes', likeId), {
+        userId: user.uid,
+        publicationId: pubId,
+        createdAt: serverTimestamp()
+      });
+      
+      await updateDoc(doc(db, 'publications', pubId), {
+        likesCount: increment(1)
       });
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `publications/${pub.id}`);
+      handleFirestoreError(error, OperationType.UPDATE, `publications/${pubId}/likes`);
     }
   };
 
@@ -735,7 +804,9 @@ export default function App() {
       ? publications 
       : galleryFilter === 'retos'
       ? publications.filter(p => getPubType(p) === 'reto')
-      : publications.filter(p => getPubType(p) === 'laboratorio');
+      : galleryFilter === 'laboratorio'
+      ? publications.filter(p => getPubType(p) === 'laboratorio')
+      : [...publications].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
 
     const getCategoryColor = (challengeId: string) => {
       const challenge = CHALLENGES.find(c => c.id === challengeId);
@@ -783,7 +854,7 @@ export default function App() {
 
           {/* Sistema de filtros (Píldoras fijas) */}
           <div className="flex items-center gap-[6px] mb-8">
-            {['all', 'retos', 'laboratorio'].map((filter) => (
+            {['all', 'retos', 'laboratorio', 'valorados'].map((filter) => (
               <button
                 key={filter}
                 onClick={() => setGalleryFilter(filter as any)}
@@ -793,7 +864,7 @@ export default function App() {
                     : 'bg-[#EDE8DF] text-[#8A8070] hover:bg-[#C8C2B4]'
                 }`}
               >
-                {filter === 'all' ? 'Todos' : filter === 'retos' ? 'Retos' : 'Laboratorio'}
+                {filter === 'all' ? 'Todos' : filter === 'retos' ? 'Retos' : filter === 'laboratorio' ? 'Laboratorio' : 'Más valorados'}
               </button>
             ))}
           </div>
@@ -823,10 +894,10 @@ export default function App() {
                   key={pub.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  onClick={() => navigateToSource(pub)}
-                  className={`group cursor-pointer bg-white border border-[#E8E6E0] hover:border-[#8F8E88] rounded-[2px] p-[24px] flex flex-col transition-all duration-[150ms] relative ${
+                  onClick={() => editingPubId !== pub.id && navigateToSource(pub)}
+                  className={`group bg-white border border-[#E8E6E0] hover:border-[#8F8E88] rounded-[2px] p-[24px] flex flex-col transition-all duration-[150ms] relative ${
                     isFeatured ? 'lg:col-span-2' : ''
-                  }`}
+                  } ${editingPubId === pub.id ? 'cursor-default border-[#1C1510]' : 'cursor-pointer'}`}
                 >
                   {/* Etiqueta de categoría */}
                   <div className="flex items-center gap-[8px] mb-4">
@@ -839,13 +910,49 @@ export default function App() {
                     </span>
                   </div>
 
-                  {/* Extracto del texto */}
+                  {/* Extracto del texto o área de edición */}
                   <div className="flex-grow mb-6">
-                    <p className={`font-editorial text-[#1C1510] leading-[1.7] whitespace-pre-wrap overflow-hidden ${
-                      isFeatured ? 'text-[18px] line-clamp-6' : 'text-[15px] line-clamp-5'
-                    }`}>
-                      {pub.content}
-                    </p>
+                    {editingPubId === pub.id ? (
+                      <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
+                        {/* Vista de comparación: Original */}
+                        <div className="p-4 bg-[#F7F4EE] border border-[#E8E6E0] rounded-[2px] opacity-60">
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-[#8A8070] mb-2 [font-variant:small-caps]">Texto Original:</p>
+                          <p className="font-editorial text-[13px] leading-[1.6] whitespace-pre-wrap">{pub.content}</p>
+                        </div>
+                        
+                        {/* Área de edición */}
+                        <div className="space-y-2">
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-[#1C1510] [font-variant:small-caps]">Nueva Versión:</p>
+                          <textarea
+                            value={editingContent}
+                            onChange={(e) => setEditingContent(e.target.value)}
+                            className="w-full h-48 p-4 border border-[#1C1510] rounded-[2px] font-editorial text-[15px] leading-[1.7] focus:ring-0 resize-none bg-white shadow-inner"
+                            autoFocus
+                          />
+                        </div>
+
+                        <div className="flex gap-2 justify-end">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}
+                            className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-[#8A8070] hover:text-[#1C1510] transition-colors"
+                          >
+                            Descartar
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }}
+                            className="px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest bg-[#1C1510] text-[#F7F4EE] rounded-[2px] hover:opacity-90 transition-opacity flex items-center gap-2"
+                          >
+                            Actualizar Publicación
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className={`font-editorial text-[#1C1510] leading-[1.7] whitespace-pre-wrap overflow-hidden ${
+                        isFeatured ? 'text-[18px] line-clamp-6' : 'text-[15px] line-clamp-5'
+                      }`}>
+                        {pub.content}
+                      </p>
+                    )}
                   </div>
 
                   {/* Pie de tarjeta */}
@@ -856,12 +963,34 @@ export default function App() {
                       </div>
                       <span className="text-[12px] text-[#8A8070] font-body">{pub.authorName}</span>
                     </div>
-                    <span className="text-[11px] text-[#1C1510] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">
-                      Ir al reto →
-                    </span>
+                    
+                    <div className="flex items-center gap-4">
+                      {/* Sistema de valoración positiva */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleLike(pub.id); }}
+                        className={`flex items-center gap-1.5 transition-all ${
+                          userLikes[pub.id] 
+                            ? 'text-red-500 cursor-default' 
+                            : 'text-[#8A8070] hover:text-red-400 active:scale-125'
+                        }`}
+                      >
+                        <Heart 
+                          className={`w-4 h-4 ${userLikes[pub.id] ? 'fill-current' : ''}`} 
+                        />
+                        {userLikes[pub.id] && (
+                          <span className="text-[11px] font-bold font-body">
+                            {pub.likesCount || 0}
+                          </span>
+                        )}
+                      </button>
+
+                      <span className="text-[11px] text-[#1C1510] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">
+                        Ir al reto →
+                      </span>
+                    </div>
                   </div>
                   
-                  {isAdmin && (
+                  {isAdmin && editingPubId !== pub.id && (
                     <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleEdit(pub); }}
