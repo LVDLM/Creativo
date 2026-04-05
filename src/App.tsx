@@ -22,6 +22,7 @@ import { MicroStoryLab } from './components/MicroStoryLab';
 import { WeatherActionLab } from './components/WeatherActionLab';
 import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
 import { WritingArea } from './components/WritingArea';
+import { TimeChallenge } from './components/TimeChallenge';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsAndConditions from './components/TermsAndConditions';
 import ContactForm from './components/ContactForm';
@@ -61,7 +62,8 @@ import {
   Palette,
   Sparkle,
   Heart,
-  X
+  X,
+  XCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -93,8 +95,9 @@ export default function App() {
   const [theme, setTheme] = useState<'organic' | 'modern' | 'minimal'>('minimal');
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [pontePrompt, setPontePrompt] = useState<any>(null);
-  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'privacy' | 'terms' | 'contact'>('home');
+  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'privacy' | 'terms' | 'contact' | 'time-challenge'>('home');
   const [publications, setPublications] = useState<Publication[]>([]);
+  const [pendingPublications, setPendingPublications] = useState<Publication[]>([]);
   const [userLikes, setUserLikes] = useState<Record<string, boolean>>({});
   const [writingContent, setWritingContent] = useState('');
   const [pseudonym, setPseudonym] = useState('');
@@ -105,6 +108,9 @@ export default function App() {
   const [galleryFilter, setGalleryFilter] = useState<string>('all');
   const [authorFilter, setAuthorFilter] = useState<string | null>(null);
   const [authorNameFilter, setAuthorNameFilter] = useState<string | null>(null);
+  const [showModeration, setShowModeration] = useState(false);
+
+  const isAdmin = user?.email === 'lavozdelosmuertos@gmail.com';
   const [showExamples, setShowExamples] = useState(false);
   const [openFilterDropdown, setOpenFilterDropdown] = useState<'retos' | 'lab' | null>(null);
   const [currentPhrase, setCurrentPhrase] = useState(STARTING_PHRASES[0]);
@@ -204,6 +210,29 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!isAdmin) {
+      setPendingPublications([]);
+      return;
+    }
+    const path = 'publications';
+    const q = query(
+      collection(db, path), 
+      where('status', '==', 'pending'),
+      orderBy('createdAt', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const pubs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Publication[];
+      setPendingPublications(pubs);
+    }, (error) => {
+      console.error('Moderation subscription error:', error);
+    });
+    return () => unsubscribe();
+  }, [isAdmin]);
+
   // Test connection
   useEffect(() => {
     async function testConnection() {
@@ -219,20 +248,24 @@ export default function App() {
   }, []);
 
   const handlePublish = async (labToolId?: string) => {
-    if (!user || (!activeChallenge && !labToolId) || !writingContent.trim()) return;
+    if ((!activeChallenge && !labToolId) || !writingContent.trim()) return;
     setIsPublishing(true);
     
     try {
       const path = 'publications';
+      const isGuest = !user;
+      
       try {
         await addDoc(collection(db, path), {
           challengeId: labToolId || activeChallenge?.id,
           subTitle: pontePrompt?.title || null,
-          authorId: user.uid,
-          authorName: pseudonym.trim() || user.displayName || 'Anónimo',
+          authorId: user ? user.uid : 'guest',
+          authorName: pseudonym.trim() || (user ? user.displayName : 'Invitado') || 'Invitado',
           content: writingContent,
           createdAt: serverTimestamp(),
-          isModerated: true, // Published directly, admin can manage later
+          isModerated: !isGuest, // Published directly if logged in, otherwise needs moderation
+          status: isGuest ? 'pending' : 'approved',
+          isGuest: isGuest,
           likesCount: 0
         });
       } catch (error) {
@@ -242,11 +275,15 @@ export default function App() {
       setPublishSuccess(true);
       setTimeout(() => {
         setPublishSuccess(false);
-        setView('gallery');
+        if (!isGuest) setView('gallery');
         setActiveChallenge(null);
         setActiveLabTool(null);
         setWritingContent('');
         setPseudonym('');
+        if (isGuest) {
+          // Maybe show a message or just go home
+          setView('home');
+        }
       }, 2000);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'publications');
@@ -263,6 +300,60 @@ export default function App() {
         console.error('Login error:', error);
       }
     }
+  };
+
+  const handleTimeChallengePublish = async (content: string, challengeId: string, customPseudonym: string) => {
+    try {
+      const path = 'publications';
+      const isGuest = !user;
+      
+      await addDoc(collection(db, path), {
+        challengeId: challengeId,
+        subTitle: 'Reto de Tiempo',
+        authorId: user ? user.uid : 'guest',
+        authorName: customPseudonym.trim() || (user ? user.displayName : 'Invitado') || 'Invitado',
+        content: content,
+        createdAt: serverTimestamp(),
+        isModerated: !isGuest,
+        status: isGuest ? 'pending' : 'approved',
+        isGuest: isGuest,
+        likesCount: 0
+      });
+      return true;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'publications');
+      return false;
+    }
+  };
+
+  const renderTimeChallenge = () => {
+    const isMinimal = theme === 'minimal';
+    return (
+      <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
+        {isMinimal && (
+          <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
+            <div 
+              className="font-editorial font-bold text-[15px] cursor-pointer"
+              onClick={() => setView('home')}
+            >
+              Ponte Creativo
+            </div>
+            <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
+              <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+              <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
+            </div>
+          </nav>
+        )}
+        <TimeChallenge 
+          challenges={CHALLENGES}
+          user={user}
+          onPublish={handleTimeChallengePublish}
+          onBack={() => setView('home')}
+          theme={theme}
+        />
+      </div>
+    );
   };
 
   const renderHome = () => {
@@ -385,6 +476,12 @@ export default function App() {
                   className="bg-[#1C1510] text-[#F7F4EE] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:opacity-90 transition-all"
                 >
                   Actividad de hoy
+                </button>
+                <button 
+                  onClick={() => setView('time-challenge')}
+                  className="bg-[#D85A30] text-[#F7F4EE] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:opacity-90 transition-all flex items-center gap-2"
+                >
+                  <Clock className="w-4 h-4" /> Reto de tiempo
                 </button>
                 <button 
                   onClick={() => setView('gallery')}
@@ -661,7 +758,10 @@ export default function App() {
     );
   };
 
-  const isAdmin = user?.email === 'lavozdelosmuertos@gmail.com';
+  const handleCancelEdit = () => {
+    setEditingPubId(null);
+    setEditingContent('');
+  };
 
   const handleDelete = async (pubId: string) => {
     if (!window.confirm('¿Estás seguro de que quieres borrar esta publicación?')) return;
@@ -690,9 +790,25 @@ export default function App() {
     }
   };
 
-  const handleCancelEdit = () => {
-    setEditingPubId(null);
-    setEditingContent('');
+  const handleApprove = async (pubId: string) => {
+    if (!isAdmin) return;
+    try {
+      await updateDoc(doc(db, 'publications', pubId), {
+        status: 'approved',
+        isModerated: true
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `publications/${pubId}`);
+    }
+  };
+
+  const handleReject = async (pubId: string) => {
+    if (!isAdmin) return;
+    try {
+      await deleteDoc(doc(db, 'publications', pubId));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `publications/${pubId}`);
+    }
   };
 
   const handleLike = async (pubId: string) => {
@@ -863,11 +979,10 @@ export default function App() {
                 key={filter}
                 onClick={() => {
                   setGalleryFilter(filter as any);
-                  // Optional: clear author filter when changing category? 
-                  // Let's keep it for now as it's more powerful.
+                  setShowModeration(false);
                 }}
                 className={`px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all ${
-                  galleryFilter === filter
+                  !showModeration && galleryFilter === filter
                     ? 'bg-[#1C1510] text-[#F7F4EE]'
                     : 'bg-[#EDE8DF] text-[#8A8070] hover:bg-[#C8C2B4]'
                 }`}
@@ -875,6 +990,20 @@ export default function App() {
                 {filter === 'all' ? 'Todos' : filter === 'retos' ? 'Retos' : filter === 'laboratorio' ? 'Laboratorio' : 'Más valorados'}
               </button>
             ))}
+
+            {isAdmin && (
+              <button
+                onClick={() => setShowModeration(!showModeration)}
+                className={`px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
+                  showModeration
+                    ? 'bg-amber-600 text-white shadow-lg shadow-amber-100'
+                    : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                }`}
+              >
+                <AlertCircle className="w-3 h-3" />
+                Moderación {pendingPublications.length > 0 && `(${pendingPublications.length})`}
+              </button>
+            )}
 
             {authorFilter && (
               <div className="flex items-center gap-2 ml-auto bg-[#1C1510] text-[#F7F4EE] px-3 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest animate-in fade-in slide-in-from-right-4">
@@ -894,12 +1023,78 @@ export default function App() {
 
           {/* Contador de resultados */}
           <div className={`mb-4 text-[12px] ${isMinimal ? 'text-[#8A8070] font-body uppercase tracking-widest' : 'text-[#AAAAAA]'}`}>
-            {filteredPubs.length} {filteredPubs.length === 1 ? 'entrada' : 'entradas'}
+            {showModeration 
+              ? `${pendingPublications.length} ${pendingPublications.length === 1 ? 'pendiente' : 'pendientes'}`
+              : `${filteredPubs.length} ${filteredPubs.length === 1 ? 'entrada' : 'entradas'}`
+            }
           </div>
 
           {/* Grid de tarjetas */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-auto">
-            {filteredPubs.map((pub, index) => {
+            {showModeration ? (
+              pendingPublications.map((pub) => {
+                const challenge = CHALLENGES.find(c => c.id === pub.challengeId);
+                const labToolNames: Record<string, string> = {
+                  'lab-micro-story': 'Microhistorias',
+                  'lab-weather-action': 'Tiempo y Acciones',
+                  'lab-surreal-dialog': 'Diálogos Surrealistas'
+                };
+                const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
+                const dotColor = getCategoryColor(pub.challengeId);
+                const initials = pub.authorName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+                return (
+                  <motion.div
+                    key={pub.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-white border-2 border-amber-200 rounded-[2px] p-6 flex flex-col shadow-sm relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 left-0 w-full h-1 bg-amber-200" />
+                    
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
+                      <span className="text-[10px] uppercase tracking-widest text-amber-700 font-bold">
+                        Pendiente: {challengeTitle}
+                      </span>
+                    </div>
+
+                    <div className="flex-grow mb-6">
+                      <p className="font-editorial text-[15px] leading-[1.7] text-[#1C1510] whitespace-pre-wrap">
+                        {pub.content}
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-stone-100 flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-stone-100 flex items-center justify-center text-[10px] font-bold text-stone-400">
+                          {initials}
+                        </div>
+                        <span className="text-[12px] text-stone-500 font-body">
+                          {pub.authorName} {pub.isGuest && <span className="text-[10px] bg-stone-100 px-1.5 py-0.5 rounded text-stone-400 font-bold ml-1">INVITADO</span>}
+                        </span>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => handleApprove(pub.id)}
+                          className="flex-grow flex items-center justify-center gap-2 bg-emerald-600 text-white py-2 rounded-[2px] text-[11px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-colors"
+                        >
+                          <CheckCircle2 className="w-4 h-4" /> Aprobar
+                        </button>
+                        <button 
+                          onClick={() => handleReject(pub.id)}
+                          className="flex-grow flex items-center justify-center gap-2 bg-red-50 text-red-600 py-2 rounded-[2px] text-[11px] font-bold uppercase tracking-widest hover:bg-red-100 transition-colors"
+                        >
+                          <XCircle className="w-4 h-4" /> Rechazar
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })
+            ) : (
+              filteredPubs.map((pub, index) => {
               const isFeatured = galleryFilter === 'all' && index === 0;
               const challenge = CHALLENGES.find(c => c.id === pub.challengeId);
               const labToolNames: Record<string, string> = {
@@ -1041,9 +1236,10 @@ export default function App() {
                   )}
                 </motion.div>
               );
-            })}
+            })
+          )}
 
-            {/* Tarjeta CTA */}
+          {/* Tarjeta CTA */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1335,6 +1531,7 @@ export default function App() {
             {view === 'challenge' && renderChallenge()}
             {view === 'gallery' && renderGallery()}
             {view === 'lab' && renderLab()}
+            {view === 'time-challenge' && renderTimeChallenge()}
             {view === 'privacy' && <PrivacyPolicy onBack={() => setView('home')} theme={theme} />}
             {view === 'terms' && <TermsAndConditions onBack={() => setView('home')} theme={theme} />}
             {view === 'contact' && <ContactForm onBack={() => setView('home')} theme={theme} user={user} />}

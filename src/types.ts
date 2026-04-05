@@ -21,6 +21,8 @@ export interface Publication {
   createdAt: any;
   isModerated: boolean;
   likesCount?: number;
+  status?: 'pending' | 'approved' | 'rejected';
+  isGuest?: boolean;
 }
 
 export enum OperationType {

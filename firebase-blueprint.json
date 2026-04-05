@@ -33,6 +33,15 @@
         "isModerated": {
           "type": "boolean",
           "description": "Whether the content has passed moderation."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected"],
+          "description": "The current status of the publication."
+        },
+        "isGuest": {
+          "type": "boolean",
+          "description": "Whether the author is a guest."
         }
       },
       "required": ["challengeId", "authorId", "authorName", "content", "createdAt", "isModerated"]

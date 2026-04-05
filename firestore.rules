@@ -71,7 +71,22 @@ service cloud.firestore {
              data.createdAt == request.time &&
              data.isModerated is bool &&
              (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200)) &&
-             (!('likesCount' in data) || data.likesCount is int);
+             (!('likesCount' in data) || data.likesCount is int) &&
+             (!('status' in data) || data.status in ['pending', 'approved', 'rejected']) &&
+             (!('isGuest' in data) || data.isGuest == false);
+    }
+
+    function isValidGuestPublication(data) {
+      return data.keys().hasAll(['challengeId', 'authorId', 'authorName', 'content', 'createdAt', 'isModerated', 'isGuest', 'status']) &&
+             data.challengeId is string && data.challengeId.size() > 0 && data.challengeId.size() < 100 &&
+             data.authorId == "guest" &&
+             data.authorName is string && data.authorName.size() > 0 && data.authorName.size() < 100 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
+             data.createdAt == request.time &&
+             data.isModerated == false &&
+             data.isGuest == true &&
+             data.status == "pending" &&
+             (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200));
     }
 
     function isValidUser(data) {
@@ -105,10 +120,13 @@ service cloud.firestore {
 
     match /publications/{pubId} {
       // Anyone can read moderated publications
-      allow read: if resource.data.isModerated == true;
+      // Admins can read all publications
+      allow read: if resource.data.isModerated == true || isAdmin();
       
       // Authenticated users can create their own publications
-      allow create: if isAuthenticated() && isValidPublication(request.resource.data);
+      // Unauthenticated users can create guest publications
+      allow create: if (isAuthenticated() && isValidPublication(request.resource.data)) || 
+                       (!isAuthenticated() && isValidGuestPublication(request.resource.data));
       
       // Only owners or admins can delete
       allow delete: if isDocOwner() || isAdmin();
