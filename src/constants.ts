@@ -86,6 +86,18 @@ export const CHALLENGES: Challenge[] = [
     tags: ['Anagramas', 'Letras', '5 min']
   },
   {
+    id: 'iguales-pero-no',
+    title: 'Iguales pero no',
+    description: 'Usa palabras homónimas (son palabras diferentes pero se escriben o suenan igual). Cuantas más, mejor ¡en un único texto!',
+    example: 'El que vino solo no nada nada, solo vino al vino que regalan.',
+    category: 'Homónimos',
+    icon: 'RefreshCw',
+    difficulty: 'Media',
+    duration: '10 min',
+    color: '#4b7bec',
+    tags: ['Semántica', 'Juego de palabras', '10 min']
+  },
+  {
     id: 'ponte-si-puedes',
     title: 'Ponte (si puedes)...',
     description: 'Un reto dinámico que te propone diferentes escenarios y condiciones aleatorias para poner a prueba tu versatilidad.',

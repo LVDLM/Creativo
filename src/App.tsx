@@ -1540,17 +1540,26 @@ export default function App() {
       </main>
 
       <footer className={`py-12 px-6 border-t mt-20 transition-colors ${theme === 'modern' ? 'border-indigo-50 bg-indigo-50/10' : 'border-stone-200 bg-stone-50/30'}`}>
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="text-center md:text-left">
-            <h3 className={`text-xl font-bold mb-2 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>Ponte Creativo</h3>
-            <p className="opacity-40 text-sm italic">Cultivando el jardín de las palabras.</p>
+        <div className="max-w-6xl mx-auto">
+          {/* Espacio para AdSense */}
+          <div className="mb-12 flex justify-center">
+            <div className="w-full max-w-[728px] h-[90px] bg-stone-100/50 border border-dashed border-stone-300 flex items-center justify-center text-stone-400 text-xs uppercase tracking-widest">
+              Publicidad
+            </div>
           </div>
-          <div className="flex gap-8 text-sm opacity-40 sans">
-            <button onClick={() => setView('privacy')} className="hover:opacity-100 transition-opacity">Privacidad</button>
-            <button onClick={() => setView('terms')} className="hover:opacity-100 transition-opacity">Términos</button>
-            <button onClick={() => setView('contact')} className="hover:opacity-100 transition-opacity">Contacto</button>
+
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="text-center md:text-left">
+              <h3 className={`text-xl font-bold mb-2 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>Ponte Creativo</h3>
+              <p className="opacity-40 text-sm italic">Cultivando el jardín de las palabras.</p>
+            </div>
+            <div className="flex gap-8 text-sm opacity-40 sans">
+              <button onClick={() => setView('privacy')} className="hover:opacity-100 transition-opacity">Privacidad</button>
+              <button onClick={() => setView('terms')} className="hover:opacity-100 transition-opacity">Términos</button>
+              <button onClick={() => setView('contact')} className="hover:opacity-100 transition-opacity">Contacto</button>
+            </div>
+            <p className="text-xs opacity-30 sans">© 2026 Ponte Creativo. Todos los derechos reservados.</p>
           </div>
-          <p className="text-xs opacity-30 sans">© 2026 Ponte Creativo. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>
