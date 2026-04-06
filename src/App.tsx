@@ -23,6 +23,7 @@ import { WeatherActionLab } from './components/WeatherActionLab';
 import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
 import { WritingArea } from './components/WritingArea';
 import { TimeChallenge } from './components/TimeChallenge';
+import { ExamplesCarousel } from './components/ExamplesCarousel';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsAndConditions from './components/TermsAndConditions';
 import ContactForm from './components/ContactForm';
@@ -39,6 +40,7 @@ import {
   LogOut, 
   LogIn,
   ChevronRight,
+  ChevronLeft,
   Send,
   CheckCircle2,
   AlertCircle,
@@ -167,6 +169,10 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [view, activeChallenge]);
 
   useEffect(() => {
     if (!user) {
@@ -611,7 +617,7 @@ export default function App() {
               <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
             </div>
           </nav>
-          <div className="max-w-4xl mx-auto px-6 py-16">
+          <div className="max-w-6xl mx-auto px-6 py-16">
             <button 
               onClick={() => {
                 setView('home');
@@ -623,7 +629,7 @@ export default function App() {
             </button>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-              <div className="lg:col-span-5">
+              <div className="lg:col-span-4">
                 <div className="sticky top-32">
                   <div className="flex items-center gap-3 mb-6">
                     <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#EDE8DF] rounded-[2px] text-[#8A8070]">
@@ -663,7 +669,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="lg:col-span-7">
+              <div className="lg:col-span-8">
                 {(!isPonte || pontePrompt) && (
                   <WritingArea 
                     user={user}
@@ -681,10 +687,17 @@ export default function App() {
                 )}
                 
                 <div className="mt-12">
-                  {renderExamplesCarousel(activeChallenge.id)}
+                  {/* Moved out of here */}
                 </div>
               </div>
             </div>
+            <ExamplesCarousel 
+              challengeId={activeChallenge.id} 
+              publications={publications} 
+              theme={theme} 
+              showExamples={showExamples} 
+              setShowExamples={setShowExamples} 
+            />
           </div>
         </div>
       );
@@ -734,9 +747,15 @@ export default function App() {
               </strong>
               {isPonte && pontePrompt?.example ? pontePrompt.example : activeChallenge.example}
             </div>
-
-            {renderExamplesCarousel(activeChallenge.id)}
           </div>
+
+          <ExamplesCarousel 
+            challengeId={activeChallenge.id} 
+            publications={publications} 
+            theme={theme} 
+            showExamples={showExamples} 
+            setShowExamples={setShowExamples} 
+          />
 
           {(!isPonte || pontePrompt) && (
             <WritingArea 
@@ -855,59 +874,6 @@ export default function App() {
       setView('lab');
     }
     window.scrollTo(0, 0);
-  };
-
-  const renderExamplesCarousel = (challengeId: string) => {
-    const examples = publications.filter(p => p.challengeId === challengeId);
-    if (examples.length === 0) return null;
-
-    const isMinimal = theme === 'minimal';
-
-    return (
-      <div className={`mt-8 pt-8 ${isMinimal ? 'border-t border-[#C8C2B4]' : 'border-t border-stone-100'}`}>
-        {!showExamples ? (
-          <button 
-            onClick={() => setShowExamples(true)}
-            className={`flex items-center gap-2 font-bold hover:underline ${isMinimal ? 'text-[#1C1510] text-[12px] tracking-[0.06em]' : 'text-indigo-600'}`}
-          >
-            <Sparkles className="w-4 h-4" /> Ver ejemplos de otros escritores e inspirarse
-          </button>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h4 className={`font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#8A8070] [font-variant:small-caps]' : 'text-stone-400'}`}>
-                Inspiración de la comunidad
-              </h4>
-              <button 
-                onClick={() => setShowExamples(false)}
-                className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#8A8070] hover:text-[#1C1510]' : 'text-stone-400 hover:text-stone-800'}`}
-              >
-                Ocultar
-              </button>
-            </div>
-            <div className="flex gap-4 overflow-x-auto pb-4 snap-x no-scrollbar">
-              {examples.map((ex) => (
-                <div 
-                  key={ex.id} 
-                  className={`min-w-[280px] max-w-[320px] p-6 border shadow-sm snap-start ${
-                    isMinimal 
-                      ? 'bg-white border-[#E8E6E0] rounded-[2px]' 
-                      : 'bg-white border-stone-100 rounded-2xl'
-                  }`}
-                >
-                  <p className={`italic mb-4 whitespace-pre-line ${isMinimal ? 'text-[#1C1510] text-sm leading-relaxed' : 'text-stone-600'}`}>
-                    "{ex.content}"
-                  </p>
-                  <span className={`text-[10px] font-bold ${isMinimal ? 'text-[#8A8070]' : 'text-stone-400'}`}>
-                    — {ex.authorName}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
   };
 
   const renderGallery = () => {
@@ -1289,7 +1255,13 @@ export default function App() {
               onLogin={handleLogin}
             />
             <div className="max-w-4xl mx-auto">
-              {renderExamplesCarousel('lab-micro-story')}
+              <ExamplesCarousel 
+                challengeId="lab-micro-story" 
+                publications={publications} 
+                theme={theme} 
+                showExamples={showExamples} 
+                setShowExamples={setShowExamples} 
+              />
             </div>
           </div>
         </div>
@@ -1322,7 +1294,13 @@ export default function App() {
               onLogin={handleLogin}
             />
             <div className="max-w-4xl mx-auto">
-              {renderExamplesCarousel('lab-weather-action')}
+              <ExamplesCarousel 
+                challengeId="lab-weather-action" 
+                publications={publications} 
+                theme={theme} 
+                showExamples={showExamples} 
+                setShowExamples={setShowExamples} 
+              />
             </div>
           </div>
         </div>
@@ -1355,7 +1333,13 @@ export default function App() {
               onLogin={handleLogin}
             />
             <div className="max-w-4xl mx-auto">
-              {renderExamplesCarousel('lab-surreal-dialog')}
+              <ExamplesCarousel 
+                challengeId="lab-surreal-dialog" 
+                publications={publications} 
+                theme={theme} 
+                showExamples={showExamples} 
+                setShowExamples={setShowExamples} 
+              />
             </div>
           </div>
         </div>
