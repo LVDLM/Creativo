@@ -108,6 +108,127 @@ export const CHALLENGES: Challenge[] = [
     duration: 'Variable',
     color: '#34495E',
     tags: ['Creatividad', 'Personajes', 'Inspiración']
+  },
+  {
+    id: 'simon-romantico',
+    title: 'Romántico',
+    description: 'Escribe un relato de estilo romántico de no más de 500 palabras en el que participe un elefante, un espejo y una chica de 19 años.',
+    example: 'Ella se miró en el espejo, ajustando su vestido de 19 primaveras, mientras el elefante de peluche observaba desde la cama...',
+    category: 'Simón dice...',
+    icon: 'Heart',
+    difficulty: 'Media',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Romance', 'Animales']
+  },
+  {
+    id: 'simon-musico-asesino',
+    title: 'Músico ciego asesino',
+    description: 'Escribe una historia que tiene de protagonista a un joven ciego, culto, con dominio de instrumentos musicales, punto de cruz y masajes; y que además es asesino a sueldo.',
+    example: 'Sus dedos, expertos en el violín y el punto de cruz, no temblaron al preparar el siguiente encargo...',
+    category: 'Simón dice...',
+    icon: 'Swords',
+    difficulty: 'Difícil',
+    duration: '20 min',
+    tags: ['Simón dice...', 'Personajes', 'Misterio']
+  },
+  {
+    id: 'simon-acabar-vida',
+    title: 'Acabar una vida o no',
+    description: 'Escribe un monólogo filosófico de un suicida a punto de quitarse la vida. Al final debe elegir si se suicida o no, tú eliges.',
+    example: '¿Ser o no ser? El borde del puente parece la única respuesta lógica a una vida de preguntas sin respuesta...',
+    category: 'Simón dice...',
+    icon: 'AlertCircle',
+    difficulty: 'Difícil',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Filosofía', 'Drama']
+  },
+  {
+    id: 'simon-mariposa',
+    title: 'Mariposa',
+    description: 'Crea un texto de terror sobre una mariposa.',
+    example: 'Sus alas no eran de seda, sino de piel humana seca, y su aleteo sonaba como un susurro de ultratumba...',
+    category: 'Simón dice...',
+    icon: 'Ghost',
+    difficulty: 'Media',
+    duration: '10 min',
+    tags: ['Simón dice...', 'Terror', 'Naturaleza']
+  },
+  {
+    id: 'simon-con-estas-palabras',
+    title: 'Con estas palabras',
+    description: 'Escribe una historia de no más de 250 palabras, tiene que salir: un espejo, una flor y una escultura.',
+    example: 'Frente al espejo, la flor marchita parecía una escultura de dolor olvidada por el tiempo.',
+    category: 'Simón dice...',
+    icon: 'Type',
+    difficulty: 'Fácil',
+    duration: '10 min',
+    tags: ['Simón dice...', 'Restricción', '10 min']
+  },
+  {
+    id: 'simon-creacion-mundo',
+    title: 'Creación del mundo',
+    description: 'Escribe un relato de extensión libre acerca de la creación del mundo fusionando dos teorías: la serpiente cósmica (mitología africana) y el Caos/Gea (mitología griega).',
+    example: 'En el principio era el Caos, y en su centro, la serpiente cósmica comenzó a desenrollarse para dar forma a Gea...',
+    category: 'Simón dice...',
+    icon: 'Globe',
+    difficulty: 'Difícil',
+    duration: '20 min',
+    tags: ['Simón dice...', 'Mitología', 'Épico']
+  },
+  {
+    id: 'simon-fantasia-reves',
+    title: 'Fantasía al revés',
+    description: 'Escribe un relato corto (200 palabras) de fantasía épica que incluya un espadachín cobarde, un dragón vegetariano y dos personalidades o famosos.',
+    example: 'El espadachín temblaba mientras el dragón masticaba lechuga, discutiendo con Cervantes y Einstein sobre el destino del reino.',
+    category: 'Simón dice...',
+    icon: 'Dices',
+    difficulty: 'Media',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Fantasía', 'Humor']
+  },
+  {
+    id: 'simon-hiperbreves',
+    title: 'Hiperbreves',
+    description: 'Escribe tres relatos hiperbreves (no mas de 50 palabras), uno que exprese mucho amor, otro que exprese mucha tristeza y otro que exprese mucho odio.',
+    example: 'Amor: Sus ojos eran mi único hogar. Tristeza: El paraguas no cubría su ausencia. Odio: Su nombre era ceniza en mi boca.',
+    category: 'Simón dice...',
+    icon: 'Minimize2',
+    difficulty: 'Media',
+    duration: '10 min',
+    tags: ['Simón dice...', 'Brevedad', 'Emociones']
+  },
+  {
+    id: 'simon-dios-perez',
+    title: 'Dios y Pérez',
+    description: 'Escribe un diálogo entre El ratoncito Pérez y Dios, de carácter humorístico donde se debata el sentido de la vida. Sin límite de palabras.',
+    example: '—¿Y bien? —preguntó Pérez—. ¿Por qué los dientes? —Porque el calcio es la moneda del alma —respondió Dios con una sonrisa.',
+    category: 'Simón dice...',
+    icon: 'MessageSquare',
+    difficulty: 'Media',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Humor', 'Diálogo']
+  },
+  {
+    id: 'simon-triangulo',
+    title: 'Triángulo',
+    description: 'Escribe una historia de amor a tres bandas entre un canario, un gato y un perro. A tu gusto quién se enamora de quién.',
+    example: 'El canario cantaba para el gato, quien solo tenía ojos para el perro, mientras este último soñaba con las plumas amarillas.',
+    category: 'Simón dice...',
+    icon: 'Layers',
+    difficulty: 'Media',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Animales', 'Amor']
+  },
+  {
+    id: 'simon-investidura',
+    title: 'Investidura',
+    description: 'Escribe el discurso de investidura de la primera presidenta del gobierno, extensión libre.',
+    example: 'Ciudadanos, hoy no solo asumo un cargo, sino la responsabilidad de siglos de silencio que hoy se rompen con esperanza.',
+    category: 'Simón dice...',
+    icon: 'CheckCircle2',
+    difficulty: 'Media',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Política', 'Discurso']
   }
 ];
 

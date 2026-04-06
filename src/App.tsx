@@ -347,6 +347,7 @@ export default function App() {
             <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
               <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
               <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
               <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
             </div>
           </nav>
@@ -418,13 +419,15 @@ export default function App() {
   };
 
   const renderMinimalHome = () => {
-    const pills = ['Todos', 'Laboratorio', 'Retos', '5 min', '10 min', 'Personajes', 'Poesía'];
+    const pills = ['Todos', 'Laboratorio', 'Retos', 'Simón dice...', '5 min', '10 min', 'Personajes', 'Poesía'];
     const filteredActivities = activePillFilter === 'Todos' 
       ? ALL_ACTIVITIES 
       : activePillFilter === 'Retos'
       ? CHALLENGES
       : activePillFilter === 'Laboratorio'
       ? LAB_ACTIVITIES
+      : activePillFilter === 'Simón dice...'
+      ? CHALLENGES.filter(c => c.category === 'Simón dice...')
       : ALL_ACTIVITIES.filter(c => 
           c.duration === activePillFilter || 
           c.tags?.includes(activePillFilter) ||
@@ -451,6 +454,7 @@ export default function App() {
           <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
             <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
             <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+            <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
             <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
           </div>
         </nav>
@@ -546,6 +550,14 @@ export default function App() {
               ))}
             </div>
 
+            {activePillFilter === 'Simón dice...' && (
+              <div className="mb-10 p-6 bg-white border border-[#E8E6E0] rounded-[2px]">
+                <p className="text-[#5A5040] text-[14px] leading-[1.75] italic">
+                  Trata de crear tu texto cumpliendo exactamente las instrucciones que recibas. Basado en el <a href="https://www.elotrolado.net/hilo_retos-finalizados-del-juego-simon-dice-2_644757" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#1C1510]">Juego Simón dice en Elotrolado.net</a>.
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredActivities.map((activity, idx) => {
                 const Icon = ICON_MAP[activity.icon || 'PenTool'] || PenTool;
@@ -612,8 +624,9 @@ export default function App() {
               Ponte Creativo
             </div>
             <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-              <button onClick={() => { setView('home'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-              <button onClick={() => { setView('lab'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+              <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
               <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
             </div>
           </nav>
@@ -921,8 +934,9 @@ export default function App() {
               Ponte Creativo
             </div>
             <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-              <button onClick={() => { setView('home'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-              <button onClick={() => { setView('lab'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+              <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
               <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
             </div>
           </nav>
@@ -1357,8 +1371,9 @@ export default function App() {
               Ponte Creativo
             </div>
             <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-              <button onClick={() => { setView('home'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-              <button onClick={() => { setView('lab'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+              <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+              <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
               <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
             </div>
           </nav>
