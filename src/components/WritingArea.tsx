@@ -15,6 +15,8 @@ interface WritingAreaProps {
   placeholder?: string;
   theme?: 'organic' | 'modern' | 'minimal';
   maxWidth?: string;
+  children?: React.ReactNode;
+  textareaLabel?: string;
 }
 
 export const WritingArea: React.FC<WritingAreaProps> = ({
@@ -29,7 +31,9 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
   onLogin,
   placeholder = "Escribe aquí tu obra maestra...",
   theme = 'organic',
-  maxWidth
+  maxWidth,
+  children,
+  textareaLabel
 }) => {
   const isMinimal = theme === 'minimal';
 
@@ -52,16 +56,26 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
             }`}
           />
         </div>
-        <textarea
-          value={writingContent}
-          onChange={(e) => setWritingContent(e.target.value)}
-          placeholder={placeholder}
-          className={`w-full h-80 p-8 transition-all text-xl resize-y focus:ring-0 ${
-            isMinimal 
-              ? 'border-[#C8C2B4] bg-white focus:border-[#1C1510] font-body text-[16px] leading-[1.8] rounded-[2px] text-[#1C1510]' 
-              : 'border-stone-100 focus:border-stone-300 font-serif bg-stone-50/50 rounded-[32px]'
-          }`}
-        />
+
+        {children}
+
+        <div className="flex flex-col gap-2">
+          {textareaLabel && (
+            <label className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#8A8070] [font-variant:small-caps]' : 'opacity-40'}`}>
+              {textareaLabel}
+            </label>
+          )}
+          <textarea
+            value={writingContent}
+            onChange={(e) => setWritingContent(e.target.value)}
+            placeholder={placeholder}
+            className={`w-full h-80 p-8 transition-all text-xl resize-y focus:ring-0 ${
+              isMinimal 
+                ? 'border-[#C8C2B4] bg-white focus:border-[#1C1510] font-body text-[16px] leading-[1.8] rounded-[2px] text-[#1C1510]' 
+                : 'border-stone-100 focus:border-stone-300 font-serif bg-stone-50/50 rounded-[32px]'
+            }`}
+          />
+        </div>
         <div className="flex flex-col md:flex-row justify-end gap-4 items-center">
           {!user && (
             <button 

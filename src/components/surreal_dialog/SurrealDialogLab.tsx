@@ -275,6 +275,7 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
           onLogin={onLogin}
           placeholder="Escribe el diálogo surrealista usando las palabras de las ruletas..."
           theme={theme}
+          maxWidth="56rem"
         />
       </div>
 

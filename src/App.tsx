@@ -21,6 +21,7 @@ import { Challenge, Publication, OperationType, FirestoreErrorInfo } from './typ
 import { MicroStoryLab } from './components/MicroStoryLab';
 import { WeatherActionLab } from './components/WeatherActionLab';
 import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
+import { PoetryLab } from './components/PoetryLab';
 import { WritingArea } from './components/WritingArea';
 import { TimeChallenge } from './components/TimeChallenge';
 import { ExamplesCarousel } from './components/ExamplesCarousel';
@@ -159,6 +160,19 @@ export default function App() {
       isLab: true,
       labId: 'surrealdialog',
       tags: ['Laboratorio', 'Personajes', '15 min']
+    },
+    {
+      id: 'lab-poetry-says',
+      title: 'En poesía se dice...',
+      description: 'Toma una palabra o frase de tu día a día y saca toda tu literatura para decir "lo mismo" con Poesía.',
+      difficulty: 'Media',
+      duration: '10 min',
+      category: 'Laboratorio',
+      icon: 'Sparkles',
+      example: 'En castellano: "Tengo sueño". En poesía: "Mis párpados reclaman el abrazo de la noche".',
+      isLab: true,
+      labId: 'poetrysays',
+      tags: ['Laboratorio', 'Poesía', '10 min']
     }
   ];
 
@@ -255,8 +269,9 @@ export default function App() {
     testConnection();
   }, []);
 
-  const handlePublish = async (labToolId?: string) => {
-    if ((!activeChallenge && !labToolId) || !writingContent.trim()) return;
+  const handlePublish = async (labToolId?: string, contentOverride?: string) => {
+    const finalContent = contentOverride || writingContent;
+    if ((!activeChallenge && !labToolId) || !finalContent.trim()) return;
     setIsPublishing(true);
     
     try {
@@ -269,7 +284,7 @@ export default function App() {
           subTitle: pontePrompt?.title || null,
           authorId: user ? user.uid : 'guest',
           authorName: pseudonym.trim() || (user ? user.displayName : 'Invitado') || 'Invitado',
-          content: writingContent,
+          content: finalContent,
           createdAt: serverTimestamp(),
           isModerated: !isGuest, // Published directly if logged in, otherwise needs moderation
           status: isGuest ? 'pending' : 'approved',
@@ -892,12 +907,15 @@ export default function App() {
   };
 
   const renderGallery = () => {
-    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog'];
+    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says'];
     const isMinimal = theme === 'minimal';
     
     // Determine type for filtering
     const getPubType = (pub: Publication) => {
-      return labToolIds.includes(pub.challengeId) ? 'laboratorio' : 'reto';
+      const challenge = CHALLENGES.find(c => c.id === pub.challengeId);
+      if (labToolIds.includes(pub.challengeId)) return 'laboratorio';
+      if (challenge?.category === 'Simón dice...') return 'simon';
+      return 'reto';
     };
 
     const filteredPubs = (galleryFilter === 'all' 
@@ -906,6 +924,8 @@ export default function App() {
       ? publications.filter(p => getPubType(p) === 'reto')
       : galleryFilter === 'laboratorio'
       ? publications.filter(p => getPubType(p) === 'laboratorio')
+      : galleryFilter === 'simon'
+      ? publications.filter(p => getPubType(p) === 'simon')
       : [...publications].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0)))
       .filter(p => authorFilter ? p.authorId === authorFilter : true)
       .filter(p => challengeFilter ? p.challengeId === challengeFilter : true);
@@ -957,7 +977,7 @@ export default function App() {
 
           {/* Sistema de filtros (Píldoras fijas) */}
           <div className="flex flex-wrap items-center gap-[6px] mb-8">
-            {['all', 'retos', 'laboratorio', 'valorados'].map((filter) => (
+            {['all', 'retos', 'laboratorio', 'simon', 'valorados'].map((filter) => (
               <button
                 key={filter}
                 onClick={() => {
@@ -972,7 +992,7 @@ export default function App() {
                     : 'bg-[#EDE8DF] text-[#8A8070] hover:bg-[#C8C2B4]'
                 }`}
               >
-                {filter === 'all' ? 'Todos' : filter === 'retos' ? 'Retos' : filter === 'laboratorio' ? 'Laboratorio' : 'Más valorados'}
+                {filter === 'all' ? 'Todos' : filter === 'retos' ? 'Retos' : filter === 'laboratorio' ? 'Laboratorio' : filter === 'simon' ? 'Simón dice...' : 'Más valorados'}
               </button>
             ))}
 
@@ -1037,7 +1057,8 @@ export default function App() {
                 const labToolNames: Record<string, string> = {
                   'lab-micro-story': 'Microhistorias',
                   'lab-weather-action': 'Tiempo y Acciones',
-                  'lab-surreal-dialog': 'Diálogos Surrealistas'
+                  'lab-surreal-dialog': 'Diálogos Surrealistas',
+                  'lab-poetry-says': 'En poesía se dice...'
                 };
                 const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
                 const dotColor = getCategoryColor(pub.challengeId);
@@ -1100,9 +1121,10 @@ export default function App() {
               const labToolNames: Record<string, string> = {
                 'lab-micro-story': 'Microhistorias',
                 'lab-weather-action': 'Tiempo y Acciones',
-                'lab-surreal-dialog': 'Diálogos Surrealistas'
+                'lab-surreal-dialog': 'Diálogos Surrealistas',
+                'lab-poetry-says': 'En poesía se dice...'
               };
-              const typeLabel = getPubType(pub) === 'laboratorio' ? 'Laboratorio' : 'Reto';
+              const typeLabel = getPubType(pub) === 'laboratorio' ? 'Laboratorio' : getPubType(pub) === 'simon' ? 'Simón dice...' : 'Reto';
               const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
               const dotColor = getCategoryColor(pub.challengeId);
               const initials = pub.authorName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -1425,6 +1447,61 @@ export default function App() {
             <div className="max-w-4xl mx-auto">
               <ExamplesCarousel 
                 challengeId="lab-surreal-dialog" 
+                publications={publications} 
+                theme={theme} 
+                showExamples={showExamples} 
+                setShowExamples={setShowExamples} 
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeLabTool === 'poetrysays') {
+      return (
+        <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          {isMinimal && (
+            <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
+              <div 
+                className="font-editorial font-bold text-[15px] cursor-pointer"
+                onClick={() => setView('home')}
+              >
+                Ponte Creativo
+              </div>
+              <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
+                <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); setChallengeFilter(null); setChallengeNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+                <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); setChallengeFilter(null); setChallengeNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+                <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); setChallengeFilter(null); setChallengeNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
+                <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); setChallengeFilter(null); setChallengeNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
+              </div>
+            </nav>
+          )}
+          <div className="max-w-6xl mx-auto px-6 py-12">
+            <button 
+              onClick={() => {
+                setActiveLabTool(null);
+                setWritingContent('');
+              }}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#8A8070] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
+            </button>
+            <PoetryLab 
+              theme={theme}
+              user={user}
+              writingContent={writingContent}
+              setWritingContent={setWritingContent}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
+              onPublish={(content) => handlePublish('lab-poetry-says', content)}
+              isPublishing={isPublishing}
+              publishSuccess={publishSuccess}
+              onLogin={handleLogin}
+            />
+            <div className="max-w-4xl mx-auto">
+              <ExamplesCarousel 
+                challengeId="lab-poetry-says" 
                 publications={publications} 
                 theme={theme} 
                 showExamples={showExamples} 

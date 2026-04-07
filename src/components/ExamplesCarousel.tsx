@@ -98,7 +98,7 @@ export const ExamplesCarousel: React.FC<ExamplesCarouselProps> = ({
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.05 }}
-                  className={`flex-shrink-0 w-[85%] md:w-[45%] lg:w-[30%] p-8 border shadow-sm snap-start flex flex-col justify-between transition-all hover:shadow-md ${
+                  className={`flex-shrink-0 ${challengeId === 'lab-poetry-says' ? 'w-[90%] md:w-[85%] lg:w-[65%]' : 'w-[85%] md:w-[45%] lg:w-[30%]'} p-8 border shadow-sm snap-start flex flex-col justify-between transition-all hover:shadow-md ${
                     isMinimal 
                       ? 'bg-white border-[#E8E6E0] rounded-[2px]' 
                       : 'bg-white border-stone-100 rounded-2xl'
