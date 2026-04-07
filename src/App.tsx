@@ -110,6 +110,8 @@ export default function App() {
   const [galleryFilter, setGalleryFilter] = useState<string>('all');
   const [authorFilter, setAuthorFilter] = useState<string | null>(null);
   const [authorNameFilter, setAuthorNameFilter] = useState<string | null>(null);
+  const [challengeFilter, setChallengeFilter] = useState<string | null>(null);
+  const [challengeNameFilter, setChallengeNameFilter] = useState<string | null>(null);
   const [showModeration, setShowModeration] = useState(false);
 
   const isAdmin = user?.email === 'lavozdelosmuertos@gmail.com';
@@ -905,7 +907,8 @@ export default function App() {
       : galleryFilter === 'laboratorio'
       ? publications.filter(p => getPubType(p) === 'laboratorio')
       : [...publications].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0)))
-      .filter(p => authorFilter ? p.authorId === authorFilter : true);
+      .filter(p => authorFilter ? p.authorId === authorFilter : true)
+      .filter(p => challengeFilter ? p.challengeId === challengeFilter : true);
 
     const getCategoryColor = (challengeId: string) => {
       const challenge = CHALLENGES.find(c => c.id === challengeId);
@@ -960,6 +963,8 @@ export default function App() {
                 onClick={() => {
                   setGalleryFilter(filter as any);
                   setShowModeration(false);
+                  setChallengeFilter(null);
+                  setChallengeNameFilter(null);
                 }}
                 className={`px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all ${
                   !showModeration && galleryFilter === filter
@@ -992,6 +997,21 @@ export default function App() {
                   onClick={() => {
                     setAuthorFilter(null);
                     setAuthorNameFilter(null);
+                  }}
+                  className="hover:text-red-400 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
+            {challengeFilter && (
+              <div className="flex items-center gap-2 ml-auto bg-[#1C1510] text-[#F7F4EE] px-3 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest animate-in fade-in slide-in-from-right-4">
+                <span>Reto: {challengeNameFilter}</span>
+                <button 
+                  onClick={() => {
+                    setChallengeFilter(null);
+                    setChallengeNameFilter(null);
                   }}
                   className="hover:text-red-400 transition-colors"
                 >
@@ -1103,7 +1123,15 @@ export default function App() {
                       className="w-[8px] h-[8px] rounded-full" 
                       style={{ backgroundColor: dotColor }}
                     />
-                    <span className="text-[10px] uppercase tracking-[0.12em] text-[#8A8070] font-body font-bold">
+                    <span 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setChallengeFilter(pub.challengeId);
+                        setChallengeNameFilter(challengeTitle);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="text-[10px] uppercase tracking-[0.12em] text-[#8A8070] font-body font-bold hover:text-[#1C1510] hover:underline decoration-dotted underline-offset-4 transition-all"
+                    >
                       {typeLabel}: {challengeTitle}
                     </span>
                   </div>
@@ -1246,6 +1274,22 @@ export default function App() {
     if (activeLabTool === 'microstory') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          {isMinimal && (
+            <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
+              <div 
+                className="font-editorial font-bold text-[15px] cursor-pointer"
+                onClick={() => setView('home')}
+              >
+                Ponte Creativo
+              </div>
+              <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
+                <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+                <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+                <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
+                <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
+              </div>
+            </nav>
+          )}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
@@ -1285,6 +1329,22 @@ export default function App() {
     if (activeLabTool === 'weatheraction') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          {isMinimal && (
+            <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
+              <div 
+                className="font-editorial font-bold text-[15px] cursor-pointer"
+                onClick={() => setView('home')}
+              >
+                Ponte Creativo
+              </div>
+              <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
+                <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+                <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+                <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
+                <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
+              </div>
+            </nav>
+          )}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
@@ -1324,6 +1384,22 @@ export default function App() {
     if (activeLabTool === 'surrealdialog') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          {isMinimal && (
+            <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
+              <div 
+                className="font-editorial font-bold text-[15px] cursor-pointer"
+                onClick={() => setView('home')}
+              >
+                Ponte Creativo
+              </div>
+              <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
+                <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
+                <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
+                <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
+                <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
+              </div>
+            </nav>
+          )}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
