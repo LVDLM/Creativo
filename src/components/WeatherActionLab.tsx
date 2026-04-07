@@ -133,7 +133,7 @@ export const WeatherActionLab: React.FC<WeatherActionLabProps> = ({
                 style={isMinimal ? {} : { backgroundColor: die.color }}
               >
                 <img 
-                  src={`/tiempoacciones/${die.icon}`} 
+                  src={`https://www.revistahabla.com/creatividad/apps/img/icons/${die.icon}`} 
                   alt={die.icon}
                   className="w-14 h-14 md:w-16 md:h-16 object-contain"
                   referrerPolicy="no-referrer"
