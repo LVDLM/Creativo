@@ -229,6 +229,138 @@ export const CHALLENGES: Challenge[] = [
     difficulty: 'Media',
     duration: '15 min',
     tags: ['Simón dice...', 'Política', 'Discurso']
+  },
+  {
+    id: 'simon-la-carta',
+    title: 'La carta',
+    description: 'Escribe una tierna carta de amor a la chica que acaba de dejarte. En ella tienes que convencerla de que eres mejor partido que el calamar daltónico millonario que es su nuevo amante.',
+    example: 'Querida, sé que él tiene millones y ocho brazos, pero yo tengo un corazón que solo late por ti y distingo perfectamente el rojo de tus labios...',
+    category: 'Simón dice...',
+    icon: 'Heart',
+    difficulty: 'Media',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Humor', 'Amor']
+  },
+  {
+    id: 'simon-dicho-con-emojis',
+    title: 'Dicho con emojis',
+    description: 'Crea un texto en el cual todos los adjetivos y sustantivos (si así fuera posible) sean sustituidos por emoticonos.',
+    example: 'El 🏠 era 🔵 y tenía un 🌳 muy 🟢 en el 🏞️.',
+    category: 'Simón dice...',
+    icon: 'Smile',
+    difficulty: 'Media',
+    duration: '10 min',
+    tags: ['Simón dice...', 'Emojis', 'Creatividad']
+  },
+  {
+    id: 'simon-palabras-prohibidas',
+    title: 'Palabras prohibidas',
+    description: 'Escribe una historia de un máximo de 700 palabras dónde NO puede aparecer: una mujer (entre 15 y 70 años), un hombre (entre 7 y 89 años), un marciano, vegetación, el mar, el viento, el amor, el odio, la vergüenza. Si tiene que aparecer: un mosquito.',
+    example: 'El pequeño insecto zumbaba en el vacío gris de la estancia, ajeno a la ausencia de todo lo prohibido...',
+    category: 'Simón dice...',
+    icon: 'XCircle',
+    difficulty: 'Difícil',
+    duration: '20 min',
+    tags: ['Simón dice...', 'Restricción', '700 palabras']
+  },
+  {
+    id: 'simon-rima-inversa',
+    title: 'Rima inversa',
+    description: 'Escribe un poema de rima inversa, es decir en el que la rima se produzca en las sílabas iniciales del verso y no en las finales. Consonante. Que trate sobre la vida de los perros callejeros.',
+    example: 'Pe-rros que vagan sin rumbo,\nPe-nas que el viento se lleva...',
+    category: 'Simón dice...',
+    icon: 'Music',
+    difficulty: 'Difícil',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Poesía', 'Métrica']
+  },
+  {
+    id: 'simon-un-guion',
+    title: 'Un guion',
+    description: 'Escribe en formato guion una escena de una serie de televisión en la que en un apartamento conviven tres chicas y un chico. Tema libre. Extensión mínima 500 palabras.',
+    example: 'INT. APARTAMENTO - DÍA\nLUCÍA entra con las bolsas de la compra. MARCOS está dormido en el sofá...',
+    category: 'Simón dice...',
+    icon: 'Layout',
+    difficulty: 'Media',
+    duration: '25 min',
+    tags: ['Simón dice...', 'Guion', 'Narrativa']
+  },
+  {
+    id: 'simon-haiku',
+    title: 'Haiku',
+    description: 'Escribe un Haiku y haz su respectivo Haiga para cada una de las estaciones del año. Requisito indispensable: kigo.',
+    example: 'Nieve en el monte (Invierno),\nflores que nacen al sol (Primavera)...',
+    category: 'Simón dice...',
+    icon: 'Palette',
+    difficulty: 'Media',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Poesía', 'Haiku']
+  },
+  {
+    id: 'simon-horrorgrafico',
+    title: 'Horrorgráfico',
+    description: 'Escribe un texto de aproximadamente 500 palabras de tema libre con la siguiente condición: Todas las palabras han de tener todas las faltas de ortografía que sean posibles, cuanto más dañinas a la vista mejor.',
+    example: 'Ola k ase, bamos a eskribir un teksto kon munchas faltas de hortografía...',
+    category: 'Simón dice...',
+    icon: 'AlertTriangle',
+    difficulty: 'Fácil',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Humor', 'Ortografía']
+  },
+  {
+    id: 'simon-palabras-encadenadas',
+    title: 'Palabras encadenadas',
+    description: 'Escribe un relato donde la última letra de cada palabra sea la letra inicial de la palabra siguiente.',
+    example: 'El lobo oscuro oía al lobo...',
+    category: 'Simón dice...',
+    icon: 'Link',
+    difficulty: 'Difícil',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Restricción', 'Léxico']
+  },
+  {
+    id: 'simon-en-50-palabras',
+    title: 'En 50 palabras',
+    description: 'Escribe un relato de no más de 50 palabras con introducción, nudo y desenlace.',
+    example: 'Nació, vivió rápido y murió joven. Fin.',
+    category: 'Simón dice...',
+    icon: 'Minimize2',
+    difficulty: 'Media',
+    duration: '5 min',
+    tags: ['Simón dice...', 'Brevedad', '50 palabras']
+  },
+  {
+    id: 'simon-oda-cebolla',
+    title: 'Oda a la cebolla en vinagre',
+    description: 'Escribe una oda a la cebolla en vinagre acompañada de cerveza, pero sin usar las palabras deliciosa o buena o algún derivado. Extensión mínima 24 versos. Métrica y rima libre.',
+    example: 'Oh, bulbo purpúreo sumergido en ácido,\njunto al zumo de cebada espumoso...',
+    category: 'Simón dice...',
+    icon: 'Beer',
+    difficulty: 'Media',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Poesía', 'Oda']
+  },
+  {
+    id: 'simon-poema-titulos',
+    title: 'Poema de títulos',
+    description: 'Crea un poema de no menos de 20 versos donde cada verso sea el título de una canción, a ser posible reconocible y siempre haciendo que el texto tenga sentido.',
+    example: 'Imagine\nYesterday\nLet it be...',
+    category: 'Simón dice...',
+    icon: 'Music2',
+    difficulty: 'Media',
+    duration: '15 min',
+    tags: ['Simón dice...', 'Poesía', 'Música']
+  },
+  {
+    id: 'simon-fin-mundo',
+    title: 'El fin del mundo',
+    description: 'Escribe un texto en el cual se narre la noche previa al fin del mundo, donde aparezca la figura de la Muerte y en el cual el fin del mundo se produzca por algo que no se haya planteado hasta ahora. Extensión libre.',
+    example: 'La Muerte se sentó a mi lado. "No es el fuego", dijo, "es el olvido lo que apaga el sol"...',
+    category: 'Simón dice...',
+    icon: 'Skull',
+    difficulty: 'Difícil',
+    duration: '20 min',
+    tags: ['Simón dice...', 'Fantasía', 'Muerte']
   }
 ];
 

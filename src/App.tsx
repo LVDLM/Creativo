@@ -490,29 +490,44 @@ export default function App() {
           {/* 5.4 Cuerpo principal (Layout de dos columnas) */}
           <div className="flex flex-col md:flex-row gap-10 mb-10 items-start">
             {/* Columna izquierda */}
-            <div className="flex-1 max-w-[340px]">
-              <p className="text-[#5A5040] text-[14px] leading-[1.75] mb-6">
+            <div className="flex-1 md:max-w-[760px]">
+              <p className="text-[#5A5040] text-[14px] leading-[1.75] mb-6 max-w-[480px]">
                 Desbloquea tu creatividad con retos de escritura de diez minutos. Un espacio diseñado para quienes aman las palabras y el tiempo bien invertido.
               </p>
-              <div className="flex gap-[10px]">
+              <div className="flex flex-wrap md:flex-nowrap gap-[10px]">
                 <button 
                   onClick={() => {
                     setActiveChallenge(todayChallenge);
                     setView('challenge');
                   }}
-                  className="bg-[#1C1510] text-[#F7F4EE] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:opacity-90 transition-all"
+                  className="bg-[#1C1510] text-[#F7F4EE] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:opacity-90 transition-all whitespace-nowrap"
                 >
                   Actividad de hoy
                 </button>
                 <button 
                   onClick={() => setView('time-challenge')}
-                  className="bg-[#D85A30] text-[#F7F4EE] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:opacity-90 transition-all flex items-center gap-2"
+                  className="bg-[#D85A30] text-[#F7F4EE] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:opacity-90 transition-all flex items-center gap-2 whitespace-nowrap"
                 >
                   <Clock className="w-4 h-4" /> Reto de tiempo
                 </button>
                 <button 
+                  onClick={() => {
+                    const randomActivity = ALL_ACTIVITIES[Math.floor(Math.random() * ALL_ACTIVITIES.length)];
+                    if ('isLab' in randomActivity && randomActivity.isLab) {
+                      setActiveLabTool((randomActivity as any).labId || null);
+                      setView('lab');
+                    } else {
+                      setActiveChallenge(randomActivity as Challenge);
+                      setView('challenge');
+                    }
+                  }}
+                  className="bg-[#BA7517] text-[#F7F4EE] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:opacity-90 transition-all flex items-center gap-2 whitespace-nowrap"
+                >
+                  <Shuffle className="w-4 h-4" /> Algo al azar
+                </button>
+                <button 
                   onClick={() => setView('gallery')}
-                  className="bg-transparent text-[#5A5040] border border-[#C8C2B4] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:bg-[#EDE8DF] transition-all"
+                  className="bg-transparent text-[#5A5040] border border-[#C8C2B4] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:bg-[#EDE8DF] transition-all whitespace-nowrap"
                 >
                   Explorar galería
                 </button>
@@ -520,12 +535,12 @@ export default function App() {
             </div>
 
             {/* Columna derecha (Cita) */}
-            <div className="w-full md:w-[180px] border-t md:border-t-0 md:border-l border-[#C8C2B4] pt-6 md:pt-0 md:pl-6">
+            <div className="w-full md:w-[320px] border-t md:border-t-0 md:border-l border-[#C8C2B4] pt-6 md:pt-0 md:pl-6 shrink-0">
               <div className="text-[10px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps] mb-2">
                 Hoy en la galería
               </div>
-              <p className="font-editorial italic text-[14px] text-[#2C2416] leading-[1.6] mb-2">
-                "{heroQuote.content.length > 80 ? heroQuote.content.substring(0, 80) + '...' : heroQuote.content}"
+              <p className="font-editorial italic text-[14px] text-[#2C2416] leading-[1.6] mb-2 whitespace-pre-wrap">
+                "{heroQuote.content}"
               </p>
               <p className="text-[11px] text-[#8A8070] font-body">
                 — {heroQuote.authorName}
