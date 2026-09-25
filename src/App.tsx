@@ -2129,7 +2129,20 @@ export default function App() {
               <button onClick={() => setView('terms')} className="hover:opacity-100 transition-opacity">Términos</button>
               <button onClick={() => setView('contact')} className="hover:opacity-100 transition-opacity">Contacto</button>
             </div>
-            <p className="text-xs opacity-30 sans">© 2026 Ponte Creativo. Todos los derechos reservados.</p>
+            <div className="text-center md:text-right space-y-1.5">
+              <p className="text-xs opacity-30 sans">© 2026 Ponte Creativo. Todos los derechos reservados.</p>
+              <p className="text-[11px] opacity-40 sans">
+                IMG favicon: innovación PNG Designed By Omararts from{' '}
+                <a 
+                  href="https://es.pngtree.com/freepng/innovation-thinking-illustration---creative-business-idea-icon_21011765.html?sol=downref&id=bef" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="underline hover:opacity-100 transition-opacity"
+                >
+                  PNGtree
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </footer>
