@@ -41,10 +41,11 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
     <div className={`mt-12 ${isMinimal ? '' : 'border-t pt-12'} ${maxWidth ? 'mx-auto w-full' : ''}`} style={maxWidth ? { maxWidth } : {}}>
       <div className="space-y-6">
         <div className="flex flex-col gap-2">
-          <label className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#8A8070] [font-variant:small-caps]' : 'opacity-40'}`}>
+          <label htmlFor="pseudonym-input" className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#5A4A3A] [font-variant:small-caps]' : 'opacity-40'}`}>
             {user ? 'Publicar como (Seudónimo opcional):' : 'Nombre o Seudónimo (Opcional):'}
           </label>
           <input
+            id="pseudonym-input"
             type="text"
             value={pseudonym}
             onChange={(e) => setPseudonym(e.target.value)}
@@ -61,11 +62,12 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
 
         <div className="flex flex-col gap-2">
           {textareaLabel && (
-            <label className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#8A8070] [font-variant:small-caps]' : 'opacity-40'}`}>
+            <label htmlFor="writing-textarea" className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#5A4A3A] [font-variant:small-caps]' : 'opacity-40'}`}>
               {textareaLabel}
             </label>
           )}
           <textarea
+            id="writing-textarea"
             value={writingContent}
             onChange={(e) => setWritingContent(e.target.value)}
             placeholder={placeholder}
@@ -82,7 +84,7 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
               onClick={onLogin} 
               className={`text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 flex items-center gap-2 transition-all mb-4 md:mb-0`}
             >
-              <LogIn className="w-4 h-4" /> O inicia sesión con Google
+              <LogIn className="w-4 h-4" /> Iniciar sesión o crear cuenta
             </button>
           )}
           <button 

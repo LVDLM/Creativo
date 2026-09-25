@@ -37,18 +37,27 @@ body {
   --radius: 28px;
 }
 
-/* Theme: Minimal (Literary Magazine Style) */
+/* Theme: Minimal (Literary Magazine Style) — Warm Reinforced palette */
 .theme-minimal {
   --bg: #F7F4EE; /* Warm cream */
   --ink: #1C1510; /* Warm black */
-  --text-secondary: #5A5040; /* Dark brown */
-  --text-tertiary: #8A8070; /* Sepia */
+  --text-secondary: #5A4A3A; /* Warm brown, AA-compliant (7.2:1 on --bg) */
+  --text-tertiary: #5A4A3A; /* Was sepia #8A8070 (3.5:1, fails AA). Reuses AA brown. */
   --line: #C8C2B4; /* Soft line */
   --aside-bg: #EDE8DF; /* Light grey/brown */
-  --accent: #4A3728; /* Ink brown */
+  --accent: #C1441B; /* Terracotta, primary accent (was #4A3728) */
+  --accent-secondary: #0F5C52; /* Bottle green, secondary accent */
   --card-bg: #ffffff;
   --font-main: var(--font-body);
   --radius: 2px;
+
+  /* Category accent colors: badge text (AA on tint) + tint background */
+  --cat-retos-text: #8A360F;
+  --cat-retos-bg: #FAECE4;
+  --cat-lab-text: #0B4A40;
+  --cat-lab-bg: #E4F1EE;
+  --cat-simon-text: #5A4515;
+  --cat-simon-bg: #F1EAD9;
 }
 
 .theme-minimal .card:hover {
@@ -133,6 +142,19 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #4A4A30;
+}
+
+/* Visible keyboard focus indicator.
+   Several interactive elements use focus:ring-0 to drop the browser default;
+   this restores a visible indicator for keyboard users without changing the
+   visual for mouse/touch users (only applies on :focus-visible). */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--accent, #C1441B);
+  outline-offset: 2px;
 }
 
 /* No scrollbar utility */

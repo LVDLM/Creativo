@@ -92,7 +92,7 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
               Diálogos Surrealistas
             </span>
           </h1>
-          <p className="text-[10px] md:text-xs text-[#8A8070] uppercase tracking-[0.2em] font-bold mt-1 ml-1 [font-variant:small-caps]">
+          <p className="text-[10px] md:text-xs text-[#5A4A3A] uppercase tracking-[0.2em] font-bold mt-1 ml-1 [font-variant:small-caps]">
             Laboratorio Literario
           </p>
         </div>
@@ -186,7 +186,7 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
           }`}
         >
           <span className={`text-sm font-black uppercase tracking-wider ${isMinimal ? 'text-[#1C1510] [font-variant:small-caps]' : 'text-slate-900'}`}>Ayuda</span>
-          <HelpCircle className={`w-5 h-5 ${isMinimal ? 'text-[#8A8070]' : 'text-indigo-600'}`} />
+          <HelpCircle className={`w-5 h-5 ${isMinimal ? 'text-[#5A4A3A]' : 'text-indigo-600'}`} />
         </button>
       </header>
 
@@ -200,7 +200,7 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
         }`}>
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-8 md:gap-10">
             <div className="flex-1 space-y-4">
-              <label className={`text-[10px] font-black uppercase tracking-widest block text-center md:text-left ${isMinimal ? 'text-[#8A8070] [font-variant:small-caps]' : 'text-slate-500'}`}>
+              <label className={`text-[10px] font-black uppercase tracking-widest block text-center md:text-left ${isMinimal ? 'text-[#5A4A3A] [font-variant:small-caps]' : 'text-slate-500'}`}>
                 ¿Cuántos hablan?
               </label>
               <div className="flex gap-2 md:gap-3 justify-center md:justify-start flex-wrap">
@@ -212,7 +212,7 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
                     className={`w-10 h-10 md:w-12 md:h-12 font-black text-base md:text-lg border-2 border-black transition-all ${
                       numInterlocutors === num 
                         ? isMinimal ? 'bg-[#1C1510] text-white rounded-[2px]' : 'bg-indigo-600 text-white rounded-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] -translate-y-1' 
-                        : isMinimal ? 'bg-[#F7F4EE] text-[#8A8070] rounded-[2px] border-[#C8C2B4]' : 'bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100 active:shadow-none'
+                        : isMinimal ? 'bg-[#F7F4EE] text-[#5A4A3A] rounded-[2px] border-[#C8C2B4]' : 'bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100 active:shadow-none'
                     }`}
                   >
                     {num}

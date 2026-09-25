@@ -114,7 +114,7 @@ export const TimeChallenge: React.FC<TimeChallengeProps> = ({
             <Clock className="w-10 h-10 text-amber-600" />
           </div>
           <h1 className="font-editorial text-4xl md:text-6xl font-bold tracking-tight">Reto de Tiempo</h1>
-          <p className="text-lg text-[#8A8070] max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-[#5A4A3A] max-w-2xl mx-auto leading-relaxed">
             Pon a prueba tu agilidad mental y creativa. Te presentaremos una serie de retos aleatorios que deberás resolver antes de que el tiempo se agote.
           </p>
           
@@ -128,7 +128,7 @@ export const TimeChallenge: React.FC<TimeChallengeProps> = ({
                 <h3 className="font-bold uppercase tracking-widest text-sm">Límite Global</h3>
               </div>
               <p className="text-2xl font-editorial font-bold mb-2">10 Minutos</p>
-              <p className="text-sm text-[#8A8070]">Tienes 10 minutos para completar tantos retos como puedas.</p>
+              <p className="text-sm text-[#5A4A3A]">Tienes 10 minutos para completar tantos retos como puedas.</p>
             </button>
 
             <button
@@ -140,13 +140,13 @@ export const TimeChallenge: React.FC<TimeChallengeProps> = ({
                 <h3 className="font-bold uppercase tracking-widest text-sm">Límite por Reto</h3>
               </div>
               <p className="text-2xl font-editorial font-bold mb-2">2 Minutos</p>
-              <p className="text-sm text-[#8A8070]">Cada reto tiene su propio cronómetro de 2 minutos.</p>
+              <p className="text-sm text-[#5A4A3A]">Cada reto tiene su propio cronómetro de 2 minutos.</p>
             </button>
           </div>
 
           <button 
             onClick={onBack}
-            className="text-xs font-bold uppercase tracking-widest text-[#8A8070] hover:text-[#1C1510] transition-colors mt-12"
+            className="text-xs font-bold uppercase tracking-widest text-[#5A4A3A] hover:text-[#1C1510] transition-colors mt-12"
           >
             ← Volver al inicio
           </button>
@@ -165,7 +165,7 @@ export const TimeChallenge: React.FC<TimeChallengeProps> = ({
               <Clock className="w-5 h-5" />
               {formatTime(timeLeft)}
             </div>
-            <div className="text-xs font-bold uppercase tracking-widest text-[#8A8070]">
+            <div className="text-xs font-bold uppercase tracking-widest text-[#5A4A3A]">
               Reto {currentChallengeIndex + 1} de {shuffledChallenges.length}
             </div>
           </div>
@@ -232,8 +232,9 @@ export const TimeChallenge: React.FC<TimeChallengeProps> = ({
             
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex flex-col gap-1 w-full md:w-auto">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-[#8A8070]">Seudónimo (Opcional):</label>
+                <label htmlFor="time-challenge-pseudonym" className="text-[10px] font-bold uppercase tracking-widest text-[#5A4A3A]">Seudónimo (Opcional):</label>
                 <input
+                  id="time-challenge-pseudonym"
                   type="text"
                   value={pseudonym}
                   onChange={(e) => setPseudonym(e.target.value)}
@@ -269,7 +270,7 @@ export const TimeChallenge: React.FC<TimeChallengeProps> = ({
             <Trophy className="w-8 h-8 text-emerald-600" />
           </div>
           <h1 className="font-editorial text-4xl font-bold">¡Partida Finalizada!</h1>
-          <p className="text-[#8A8070]">Has completado {sessionTexts.length} retos en esta sesión.</p>
+          <p className="text-[#5A4A3A]">Has completado {sessionTexts.length} retos en esta sesión.</p>
         </div>
 
         <div className="space-y-8">
@@ -279,8 +280,8 @@ export const TimeChallenge: React.FC<TimeChallengeProps> = ({
               {sessionTexts.map((text, idx) => (
                 <div key={idx} className="bg-white p-8 border border-[#C8C2B4] rounded-lg shadow-sm space-y-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-[#D85A30] rounded-full" />
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-[#8A8070]">{text.title}</span>
+                    <div className="w-2 h-2 bg-[#C1441B] rounded-full" />
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-[#5A4A3A]">{text.title}</span>
                   </div>
                   <p className="font-editorial text-lg leading-[1.8] text-[#1C1510] whitespace-pre-wrap">{text.content}</p>
                 </div>
@@ -288,8 +289,8 @@ export const TimeChallenge: React.FC<TimeChallengeProps> = ({
             </div>
           ) : (
             <div className="text-center py-12 bg-[#EDE8DF] rounded-lg border-2 border-dashed border-[#C8C2B4]">
-              <AlertCircle className="w-8 h-8 text-[#8A8070] mx-auto mb-2" />
-              <p className="text-[#8A8070] italic">No se publicaron textos en esta partida.</p>
+              <AlertCircle className="w-8 h-8 text-[#5A4A3A] mx-auto mb-2" />
+              <p className="text-[#5A4A3A] italic">No se publicaron textos en esta partida.</p>
             </div>
           )}
         </div>

@@ -25,6 +25,16 @@ export interface Publication {
   isGuest?: boolean;
 }
 
+export interface Suggestion {
+  id: string;
+  content: string;
+  authorName?: string;
+  authorId?: string;
+  authorEmail?: string;
+  createdAt: any;
+  isStarred?: boolean;
+}
+
 export enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',

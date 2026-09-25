@@ -57,10 +57,11 @@ export const PoetryLab: React.FC<PoetryLabProps> = ({
         textareaLabel="Pero en poesía decimos:"
       >
         <div className="flex flex-col gap-2">
-          <label className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#8A8070] [font-variant:small-caps]' : 'opacity-40'}`}>
+          <label htmlFor="castellano-input" className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#5A4A3A] [font-variant:small-caps]' : 'opacity-40'}`}>
             En castellano se dice:
           </label>
           <input
+            id="castellano-input"
             type="text"
             value={castellanoText}
             onChange={(e) => setCastellanoText(e.target.value)}

@@ -17,7 +17,7 @@ import {
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db, loginWithGoogle, logout } from './firebase';
 import { CHALLENGES, PONTE_SUB_PROMPTS, STARTING_PHRASES } from './constants';
-import { Challenge, Publication, OperationType, FirestoreErrorInfo } from './types';
+import { Challenge, Publication, OperationType, FirestoreErrorInfo, Suggestion } from './types';
 import { MicroStoryLab } from './components/MicroStoryLab';
 import { WeatherActionLab } from './components/WeatherActionLab';
 import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
@@ -28,6 +28,7 @@ import { ExamplesCarousel } from './components/ExamplesCarousel';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsAndConditions from './components/TermsAndConditions';
 import ContactForm from './components/ContactForm';
+import { AuthModal } from './components/AuthModal';
 import { 
   Zap, 
   Bus, 
@@ -64,6 +65,7 @@ import {
   Layout,
   Palette,
   Sparkle,
+  Star,
   Heart,
   X,
   XCircle
@@ -72,7 +74,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 // Icon mapping
 const ICON_MAP: Record<string, any> = {
-  Zap, Bus, Train, Type, Minimize2, Layers, Shuffle, Dices, Ghost, Search, Swords, Sun, Sparkles, Clock, BarChart2, RefreshCw, Calendar, Layout, Palette, Sparkle
+  Zap, Bus, Train, Type, Minimize2, Layers, Shuffle, Dices, Ghost, Search, Swords, Sun, Sparkles, Clock, BarChart2, RefreshCw, Calendar, Layout, Palette, Sparkle, Heart
 };
 
 const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
@@ -98,9 +100,15 @@ export default function App() {
   const [theme, setTheme] = useState<'organic' | 'modern' | 'minimal'>('minimal');
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [pontePrompt, setPontePrompt] = useState<any>(null);
-  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'privacy' | 'terms' | 'contact' | 'time-challenge'>('home');
+  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'privacy' | 'terms' | 'contact' | 'time-challenge'>('home');
+  const [previousView, setPreviousView] = useState<'home' | 'lab' | 'simon' | 'gallery'>('home');
   const [publications, setPublications] = useState<Publication[]>([]);
   const [pendingPublications, setPendingPublications] = useState<Publication[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestionText, setSuggestionText] = useState('');
+  const [isSendingSuggestion, setIsSendingSuggestion] = useState(false);
+  const [suggestionSuccess, setSuggestionSuccess] = useState(false);
+  const [suggestionsFilter, setSuggestionsFilter] = useState<'all' | 'starred'>('all');
   const [userLikes, setUserLikes] = useState<Record<string, boolean>>({});
   const [writingContent, setWritingContent] = useState('');
   const [pseudonym, setPseudonym] = useState('');
@@ -120,6 +128,8 @@ export default function App() {
   const [openFilterDropdown, setOpenFilterDropdown] = useState<'retos' | 'lab' | null>(null);
   const [currentPhrase, setCurrentPhrase] = useState(STARTING_PHRASES[0]);
   const [activePillFilter, setActivePillFilter] = useState('Todos');
+  const [activeLabTool, setActiveLabTool] = useState<string | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const LAB_ACTIVITIES: (Challenge & { isLab?: boolean; labId?: string })[] = [
     {
@@ -255,6 +265,28 @@ export default function App() {
     return () => unsubscribe();
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (!isAdmin) {
+      setSuggestions([]);
+      return;
+    }
+    const path = 'suggestions';
+    const q = query(
+      collection(db, path), 
+      orderBy('createdAt', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Suggestion[];
+      setSuggestions(list);
+    }, (error) => {
+      console.error('Suggestions subscription error:', error);
+    });
+    return () => unsubscribe();
+  }, [isAdmin]);
+
   // Test connection
   useEffect(() => {
     async function testConnection() {
@@ -315,14 +347,8 @@ export default function App() {
     }
   };
 
-  const handleLogin = async () => {
-    try {
-      await loginWithGoogle();
-    } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        console.error('Login error:', error);
-      }
-    }
+  const handleLogin = () => {
+    setIsAuthModalOpen(true);
   };
 
   const handleTimeChallengePublish = async (content: string, challengeId: string, customPseudonym: string) => {
@@ -349,26 +375,118 @@ export default function App() {
     }
   };
 
+  const handleSendSuggestion = async (content: string) => {
+    if (!content.trim()) return;
+    setIsSendingSuggestion(true);
+    try {
+      const path = 'suggestions';
+      await addDoc(collection(db, path), {
+        content: content.trim(),
+        authorName: (user ? user.displayName : null) || 'Invitado',
+        authorId: user ? user.uid : 'guest',
+        authorEmail: user?.email || null,
+        createdAt: serverTimestamp(),
+        isStarred: false
+      });
+      setSuggestionSuccess(true);
+      setSuggestionText('');
+      setTimeout(() => setSuggestionSuccess(false), 5000);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'suggestions');
+    } finally {
+      setIsSendingSuggestion(false);
+    }
+  };
+
+  const handleDeleteSuggestion = async (id: string) => {
+    if (!window.confirm('¿Seguro que deseas eliminar esta sugerencia?')) return;
+    try {
+      await deleteDoc(doc(db, 'suggestions', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `suggestions/${id}`);
+    }
+  };
+
+  const handleToggleStarSuggestion = async (id: string, currentStarred: boolean) => {
+    try {
+      await updateDoc(doc(db, 'suggestions', id), {
+        isStarred: !currentStarred
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `suggestions/${id}`);
+    }
+  };
+
+  const renderMinimalNav = () => (
+    <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
+      <div 
+        className="font-editorial font-bold text-[15px] cursor-pointer"
+        onClick={() => setView('home')}
+      >
+        Ponte Creativo
+      </div>
+      <div className="flex items-center gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#5A4A3A] [font-variant:small-caps]">
+        <button 
+          onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); setChallengeFilter(null); setChallengeNameFilter(null); }} 
+          className={`hover:text-[#1C1510] transition-colors ${view === 'home' && activePillFilter === 'Retos' ? 'text-[#1C1510] font-bold' : ''}`}
+        >
+          Retos
+        </button>
+        <button 
+          onClick={() => { setView('lab'); setActiveLabTool(null); setAuthorFilter(null); setAuthorNameFilter(null); setChallengeFilter(null); setChallengeNameFilter(null); }} 
+          className={`hover:text-[#1C1510] transition-colors ${view === 'lab' ? 'text-[#1C1510] font-bold' : ''}`}
+        >
+          Laboratorio
+        </button>
+        <button 
+          onClick={() => { setView('simon'); setAuthorFilter(null); setAuthorNameFilter(null); setChallengeFilter(null); setChallengeNameFilter(null); }} 
+          className={`hover:text-[#1C1510] transition-colors ${view === 'simon' ? 'text-[#1C1510] font-bold' : ''}`}
+        >
+          Simón dice...
+        </button>
+        <button 
+          onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); setChallengeFilter(null); setChallengeNameFilter(null); }} 
+          className={`hover:text-[#1C1510] transition-colors ${view === 'gallery' ? 'text-[#1C1510] font-bold' : ''}`}
+        >
+          Galería
+        </button>
+        {isAdmin && (
+          <button 
+            onClick={() => setView('suggestions')} 
+            className={`hover:text-[#1C1510] transition-colors flex items-center gap-1.5 ${view === 'suggestions' ? 'text-[#1C1510] font-bold' : ''}`}
+          >
+            <Star className="w-3 h-3 text-amber-600 fill-amber-500" />
+            Sugerencias
+            {suggestions.length > 0 && (
+              <span className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.2 rounded-full font-bold ml-0.5 normal-case">
+                {suggestions.length}
+              </span>
+            )}
+          </button>
+        )}
+        {user ? (
+          <div className="flex items-center gap-2 border-l border-[#C8C2B4] pl-4 normal-case">
+            <span className="text-[#1C1510] font-bold text-[11px]">
+              {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
+            </span>
+            <button onClick={logout} title="Cerrar sesión" className="text-[#5A4A3A] hover:text-red-600 transition-colors">
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <button onClick={handleLogin} className="hover:text-[#1C1510] font-bold transition-colors border-l border-[#C8C2B4] pl-4">
+            Entrar
+          </button>
+        )}
+      </div>
+    </nav>
+  );
+
   const renderTimeChallenge = () => {
     const isMinimal = theme === 'minimal';
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
-        {isMinimal && (
-          <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
-            <div 
-              className="font-editorial font-bold text-[15px] cursor-pointer"
-              onClick={() => setView('home')}
-            >
-              Ponte Creativo
-            </div>
-            <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-              <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-              <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-              <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
-              <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
-            </div>
-          </nav>
-        )}
+        {isMinimal && renderMinimalNav()}
         <TimeChallenge 
           challenges={CHALLENGES}
           user={user}
@@ -435,6 +553,19 @@ export default function App() {
     );
   };
 
+  // Devuelve el grupo visual de una actividad (Retos / Laboratorio / Simón dice...)
+  // y sus colores asociados, usados para el badge y el bloque de ejemplo.
+  const getActivityGroup = (activity: any) => {
+    const isLab = 'isLab' in activity && activity.isLab;
+    if (isLab) {
+      return { label: 'Laboratorio', text: 'var(--cat-lab-text)', bg: 'var(--cat-lab-bg)' };
+    }
+    if (activity.category === 'Simón dice...') {
+      return { label: 'Simón dice...', text: 'var(--cat-simon-text)', bg: 'var(--cat-simon-bg)' };
+    }
+    return { label: 'Retos', text: 'var(--cat-retos-text)', bg: 'var(--cat-retos-bg)' };
+  };
+
   const renderMinimalHome = () => {
     const pills = ['Todos', 'Laboratorio', 'Retos', 'Simón dice...', '5 min', '10 min', 'Personajes', 'Poesía'];
     const filteredActivities = activePillFilter === 'Todos' 
@@ -461,24 +592,11 @@ export default function App() {
     return (
       <div className="bg-[#F7F4EE] min-h-screen text-[#1C1510] font-body">
         {/* 5.1 Navegación del Hero */}
-        <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
-          <div 
-            className="font-editorial font-bold text-[15px] cursor-pointer"
-            onClick={() => setView('home')}
-          >
-            Ponte Creativo
-          </div>
-          <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-            <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-            <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-            <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
-            <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
-          </div>
-        </nav>
+        {renderMinimalNav()}
 
         <div className="max-w-6xl mx-auto px-6">
           {/* 5.2 Encabezado supratítulo */}
-          <div className="text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps] mb-4">
+          <div className="text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#5A4A3A] [font-variant:small-caps] mb-4">
             Escritura creativa · Ejercicios breves
           </div>
 
@@ -506,7 +624,7 @@ export default function App() {
                 </button>
                 <button 
                   onClick={() => setView('time-challenge')}
-                  className="bg-[#D85A30] text-[#F7F4EE] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:opacity-90 transition-all flex items-center gap-2 whitespace-nowrap"
+                  className="bg-[#C1441B] text-[#F7F4EE] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:opacity-90 transition-all flex items-center gap-2 whitespace-nowrap"
                 >
                   <Clock className="w-4 h-4" /> Reto de tiempo
                 </button>
@@ -521,7 +639,7 @@ export default function App() {
                       setView('challenge');
                     }
                   }}
-                  className="bg-[#BA7517] text-[#F7F4EE] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:opacity-90 transition-all flex items-center gap-2 whitespace-nowrap"
+                  className="bg-[#0F5C52] text-[#F7F4EE] px-[22px] py-[10px] rounded-[2px] text-[12px] font-body font-bold tracking-[0.06em] hover:opacity-90 transition-all flex items-center gap-2 whitespace-nowrap"
                 >
                   <Shuffle className="w-4 h-4" /> Algo al azar
                 </button>
@@ -536,13 +654,13 @@ export default function App() {
 
             {/* Columna derecha (Cita) */}
             <div className="w-full md:w-[320px] border-t md:border-t-0 md:border-l border-[#C8C2B4] pt-6 md:pt-0 md:pl-6 shrink-0">
-              <div className="text-[10px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps] mb-2">
+              <div className="text-[10px] font-body font-normal uppercase tracking-[0.12em] text-[#5A4A3A] [font-variant:small-caps] mb-2">
                 Hoy en la galería
               </div>
               <p className="font-editorial italic text-[14px] text-[#2C2416] leading-[1.6] mb-2 whitespace-pre-wrap">
                 "{heroQuote.content}"
               </p>
-              <p className="text-[11px] text-[#8A8070] font-body">
+              <p className="text-[11px] text-[#5A4A3A] font-body">
                 — {heroQuote.authorName}
               </p>
             </div>
@@ -552,15 +670,15 @@ export default function App() {
           <div className="border-t border-[#C8C2B4] pt-3 flex flex-wrap gap-8 mb-20">
             <div className="flex flex-col">
               <span className="font-editorial font-bold text-[20px] text-[#1C1510]">47</span>
-              <span className="text-[11px] text-[#8A8070] font-body [font-variant:small-caps]">actividades</span>
+              <span className="text-[11px] text-[#5A4A3A] font-body [font-variant:small-caps]">actividades</span>
             </div>
             <div className="flex flex-col">
               <span className="font-editorial font-bold text-[20px] text-[#1C1510]">5 min</span>
-              <span className="text-[11px] text-[#8A8070] font-body [font-variant:small-caps]">la más corta</span>
+              <span className="text-[11px] text-[#5A4A3A] font-body [font-variant:small-caps]">la más corta</span>
             </div>
             <div className="flex flex-col">
               <span className="font-editorial font-bold text-[20px] text-[#1C1510]">0</span>
-              <span className="text-[11px] text-[#8A8070] font-body [font-variant:small-caps]">excusas necesarias</span>
+              <span className="text-[11px] text-[#5A4A3A] font-body [font-variant:small-caps]">excusas necesarias</span>
             </div>
           </div>
 
@@ -570,11 +688,22 @@ export default function App() {
               {pills.map(pill => (
                 <button
                   key={pill}
-                  onClick={() => setActivePillFilter(pill)}
+                  onClick={() => {
+                    if (pill === 'Laboratorio') {
+                      setView('lab');
+                      setActiveLabTool(null);
+                      return;
+                    }
+                    if (pill === 'Simón dice...') {
+                      setView('simon');
+                      return;
+                    }
+                    setActivePillFilter(pill);
+                  }}
                   className={`px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all ${
                     activePillFilter === pill 
                       ? 'bg-[#1C1510] text-[#F7F4EE]' 
-                      : 'bg-[#EDE8DF] text-[#8A8070] hover:bg-[#C8C2B4]'
+                      : 'bg-[#EDE8DF] text-[#5A4A3A] hover:bg-[#C8C2B4]'
                   }`}
                 >
                   {pill}
@@ -590,46 +719,106 @@ export default function App() {
               </div>
             )}
 
+            {/* Tarjeta destacada: actividad de hoy. Solo en la vista sin filtrar,
+                para dar un punto de entrada claro antes de la retícula completa. */}
+            {activePillFilter === 'Todos' && (() => {
+              const featured = todayChallenge;
+              const group = getActivityGroup(featured);
+              return (
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Actividad de hoy: ${featured.title}`}
+                  onClick={() => { setPreviousView('home'); setActiveChallenge(featured); setView('challenge'); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setPreviousView('home');
+                      setActiveChallenge(featured);
+                      setView('challenge');
+                    }
+                  }}
+                  className="cursor-pointer bg-white border border-[#E8E6E0] rounded-[2px] p-8 mb-6 grid grid-cols-1 md:grid-cols-[auto_1fr] gap-6 items-start hover:border-[#8F8E88] transition-all"
+                >
+                  <span
+                    className="text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-[2px] whitespace-nowrap self-start"
+                    style={{ color: '#F7F4EE', backgroundColor: '#1C1510' }}
+                  >
+                    Actividad de hoy
+                  </span>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: group.text }}>
+                      {group.label}
+                    </p>
+                    <h3 className="font-editorial text-2xl font-bold mb-2 text-[#1C1510]">{featured.title}</h3>
+                    <p className="text-[#5A4A3A] text-sm mb-4 leading-relaxed font-body">{featured.description}</p>
+                    <p
+                      className="font-editorial italic text-[13px] text-[#1C1510] rounded-[8px] px-4 py-3 inline-block"
+                      style={{ backgroundColor: group.bg }}
+                    >
+                      "{featured.example}"
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredActivities.map((activity, idx) => {
-                const Icon = ICON_MAP[activity.icon || 'PenTool'] || PenTool;
                 const isLab = 'isLab' in activity && activity.isLab;
-                
+                const group = getActivityGroup(activity);
+
+                const openActivity = () => {
+                  if (isLab && 'labId' in activity) {
+                    setActiveLabTool((activity as any).labId || null);
+                    setView('lab');
+                  } else {
+                    setPreviousView('home');
+                    setActiveChallenge(activity as Challenge);
+                    setView('challenge');
+                  }
+                };
+
                 return (
                   <motion.div
                     key={activity.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    onClick={() => {
-                      if (isLab && 'labId' in activity) {
-                        setActiveLabTool((activity as any).labId || null);
-                        setView('lab');
-                      } else {
-                        setActiveChallenge(activity as Challenge);
-                        setView('challenge');
+                    role="button"
+                    tabIndex={0}
+                    aria-label={activity.title}
+                    onClick={openActivity}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openActivity();
                       }
                     }}
                     className="group cursor-pointer bg-white border border-[#E8E6E0] p-6 rounded-[2px] hover:border-[#8F8E88] transition-all hover:shadow-sm relative"
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-[2px] ${isLab ? 'bg-[#1C1510] text-[#F7F4EE]' : 'bg-[#EDE8DF] text-[#8A8070]'}`}>
-                          {isLab ? 'LAB' : activity.difficulty}
-                        </span>
-                        <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#EDE8DF] rounded-[2px] text-[#8A8070] flex items-center gap-1">
-                          <Clock className="w-2.5 h-2.5" /> {activity.duration}
-                        </span>
-                      </div>
-                      <Icon className="w-5 h-5 text-[#C8C2B4] group-hover:text-[#1C1510] transition-colors" />
+                    <div className="flex items-center gap-2 mb-4">
+                      <span
+                        className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-[2px]"
+                        style={{ color: group.text, backgroundColor: group.bg }}
+                      >
+                        {group.label}
+                      </span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#EDE8DF] rounded-[2px] text-[#5A4A3A] flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" /> {activity.duration}
+                      </span>
                     </div>
                     <h3 className="font-editorial text-xl font-bold mb-3 leading-tight text-[#1C1510]">{activity.title}</h3>
-                    <p className="text-[#5A5040] text-sm mb-6 leading-relaxed line-clamp-2 font-body">
+                    <p className="text-[#5A4A3A] text-sm mb-4 leading-relaxed line-clamp-2 font-body">
                       {activity.description}
                     </p>
-                    <div className="pt-4 border-t border-[#E8E6E0] opacity-0 group-hover:opacity-100 transition-all">
-                      <p className="text-[10px] italic text-[#8A8070] mb-1 font-body">Ejemplo:</p>
-                      <p className="text-[#1C1510] text-xs font-body italic line-clamp-2">"{activity.example}"</p>
+                    <div className="pt-4 border-t border-[#E8E6E0]">
+                      <p
+                        className="font-editorial italic text-xs text-[#1C1510] rounded-[8px] px-3 py-2 line-clamp-2"
+                        style={{ backgroundColor: group.bg }}
+                      >
+                        "{activity.example}"
+                      </p>
                     </div>
                   </motion.div>
                 );
@@ -648,27 +837,14 @@ export default function App() {
     if (theme === 'minimal') {
       return (
         <div className="bg-[#F7F4EE] min-h-screen font-body text-[#1C1510]">
-          <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
-            <div 
-              className="font-editorial font-bold text-[15px] cursor-pointer"
-              onClick={() => setView('home')}
-            >
-              Ponte Creativo
-            </div>
-            <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-              <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-              <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-              <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
-              <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
-            </div>
-          </nav>
+          {renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-16">
             <button 
               onClick={() => {
-                setView('home');
+                setView(previousView || (activeChallenge.category === 'Simón dice...' ? 'simon' : 'home'));
                 setPontePrompt(null);
               }}
-              className="mb-12 text-[#8A8070] hover:text-[#1C1510] flex items-center gap-2 font-bold text-[11px] uppercase tracking-[0.12em] transition-colors [font-variant:small-caps]"
+              className="mb-12 text-[#5A4A3A] hover:text-[#1C1510] flex items-center gap-2 font-bold text-[11px] uppercase tracking-[0.12em] transition-colors [font-variant:small-caps]"
             >
               ← Volver
             </button>
@@ -677,10 +853,10 @@ export default function App() {
               <div className="lg:col-span-4">
                 <div className="sticky top-32">
                   <div className="flex items-center gap-3 mb-6">
-                    <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#EDE8DF] rounded-[2px] text-[#8A8070]">
+                    <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#EDE8DF] rounded-[2px] text-[#5A4A3A]">
                       {activeChallenge.difficulty}
                     </span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#EDE8DF] rounded-[2px] text-[#8A8070] flex items-center gap-1">
+                    <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#EDE8DF] rounded-[2px] text-[#5A4A3A] flex items-center gap-1">
                       <Clock className="w-2.5 h-2.5" /> {activeChallenge.duration}
                     </span>
                   </div>
@@ -704,8 +880,8 @@ export default function App() {
                   )}
 
                   <div className="bg-white p-8 rounded-[2px] border border-[#E8E6E0] shadow-sm">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#8A8070] mb-4 flex items-center gap-2 [font-variant:small-caps]">
-                      <Sparkles className="w-3 h-3" /> Inspiración
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#5A4A3A] mb-4 [font-variant:small-caps]">
+                      Inspiración
                     </p>
                     <p className="text-[#1C1510] italic leading-[1.6] whitespace-pre-line font-body text-[15px]">
                       "{isPonte && pontePrompt?.example ? pontePrompt.example : activeChallenge.example}"
@@ -752,12 +928,12 @@ export default function App() {
       <div className="max-w-4xl mx-auto px-4 py-12">
         <button 
           onClick={() => {
-            setView('home');
+            setView(previousView || (activeChallenge.category === 'Simón dice...' ? 'simon' : 'home'));
             setPontePrompt(null);
           }}
           className="mb-8 text-stone-500 hover:text-stone-800 flex items-center transition-colors"
         >
-          ← Volver a los retos
+          ← Volver
         </button>
 
         <div className="card p-8 md:p-12 mb-8">
@@ -787,8 +963,8 @@ export default function App() {
             )}
 
             <div className="bg-stone-50 p-8 rounded-[32px] border border-stone-100 italic mt-8 whitespace-pre overflow-x-auto no-scrollbar">
-              <strong className="block mb-4 not-italic text-indigo-600 uppercase text-xs font-black tracking-widest flex items-center gap-2">
-                <Sparkles className="w-4 h-4" /> Ejemplo de inspiración:
+              <strong className="block mb-4 not-italic text-indigo-600 uppercase text-xs font-black tracking-widest">
+                Ejemplo de inspiración:
               </strong>
               {isPonte && pontePrompt?.example ? pontePrompt.example : activeChallenge.example}
             </div>
@@ -907,6 +1083,7 @@ export default function App() {
   const navigateToSource = (pub: Publication) => {
     const challenge = CHALLENGES.find(c => c.id === pub.challengeId);
     if (challenge) {
+      setPreviousView('gallery');
       setActiveChallenge(challenge);
       if (challenge.id === 'ponte-si-puedes' && pub.subTitle) {
         const subPrompt = PONTE_SUB_PROMPTS.find(p => p.title === pub.subTitle);
@@ -950,42 +1127,27 @@ export default function App() {
       if (labToolIds.includes(challengeId)) return '#1D9E75'; // Verde azulado (Laboratorio)
       
       // Si es el reto dinámico, es Narrativa
-      if (challengeId === 'ponte-si-puedes') return '#D85A30'; // Naranja (Narrativa)
+      if (challengeId === 'ponte-si-puedes') return '#C1441B'; // Naranja (Narrativa)
       
       if (!challenge) return '#888780';
       
       const cat = challenge.category.toLowerCase();
       if (cat.includes('acentuación')) return '#7F77DD'; // Morado
-      if (cat.includes('narrativa') || cat.includes('tren') || cat.includes('misterio')) return '#D85A30'; // Naranja
-      if (cat.includes('vocabulario') || cat.includes('acróstico') || cat.includes('anagramas') || cat.includes('polisemia') || cat.includes('monosílabos') || cat.includes('calambur') || cat.includes('monovocalismo')) return '#BA7517'; // Ámbar
+      if (cat.includes('narrativa') || cat.includes('tren') || cat.includes('misterio')) return '#C1441B'; // Naranja
+      if (cat.includes('vocabulario') || cat.includes('acróstico') || cat.includes('anagramas') || cat.includes('polisemia') || cat.includes('monosílabos') || cat.includes('calambur') || cat.includes('monovocalismo')) return '#0F5C52'; // Ámbar
       return '#888780';
     };
 
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
-        {isMinimal && (
-          <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
-            <div 
-              className="font-editorial font-bold text-[15px] cursor-pointer"
-              onClick={() => setView('home')}
-            >
-              Ponte Creativo
-            </div>
-            <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-              <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-              <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-              <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
-              <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
-            </div>
-          </nav>
-        )}
+        {isMinimal && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-16">
           {/* Cabecera de la sección */}
           <div className="mb-10">
             <h1 className={`text-[26px] font-bold mb-1 ${isMinimal ? 'font-editorial text-[34px] md:text-[52px] leading-[1.05] tracking-[-0.02em]' : 'text-stone-900'}`}>
               Galería pública
             </h1>
-            <p className={`text-sm italic ${isMinimal ? 'text-[#8A8070] font-body' : 'text-[#888780]'}`}>
+            <p className={`text-sm italic ${isMinimal ? 'text-[#5A4A3A] font-body' : 'text-[#888780]'}`}>
               Inspiración compartida por nuestra comunidad.
             </p>
           </div>
@@ -1004,7 +1166,7 @@ export default function App() {
                 className={`px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all ${
                   !showModeration && galleryFilter === filter
                     ? 'bg-[#1C1510] text-[#F7F4EE]'
-                    : 'bg-[#EDE8DF] text-[#8A8070] hover:bg-[#C8C2B4]'
+                    : 'bg-[#EDE8DF] text-[#5A4A3A] hover:bg-[#C8C2B4]'
                 }`}
               >
                 {filter === 'all' ? 'Todos' : filter === 'retos' ? 'Retos' : filter === 'laboratorio' ? 'Laboratorio' : filter === 'simon' ? 'Simón dice...' : 'Más valorados'}
@@ -1012,17 +1174,26 @@ export default function App() {
             ))}
 
             {isAdmin && (
-              <button
-                onClick={() => setShowModeration(!showModeration)}
-                className={`px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
-                  showModeration
-                    ? 'bg-amber-600 text-white shadow-lg shadow-amber-100'
-                    : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                }`}
-              >
-                <AlertCircle className="w-3 h-3" />
-                Moderación {pendingPublications.length > 0 && `(${pendingPublications.length})`}
-              </button>
+              <>
+                <button
+                  onClick={() => setShowModeration(!showModeration)}
+                  className={`px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
+                    showModeration
+                      ? 'bg-amber-600 text-white shadow-lg shadow-amber-100'
+                      : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                  }`}
+                >
+                  <AlertCircle className="w-3 h-3" />
+                  Moderación {pendingPublications.length > 0 && `(${pendingPublications.length})`}
+                </button>
+                <button
+                  onClick={() => setView('suggestions')}
+                  className="px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
+                >
+                  <Star className="w-3 h-3 text-amber-600 fill-amber-500" />
+                  Sugerencias {suggestions.length > 0 && `(${suggestions.length})`}
+                </button>
+              </>
             )}
 
             {authorFilter && (
@@ -1057,7 +1228,7 @@ export default function App() {
           </div>
 
           {/* Contador de resultados */}
-          <div className={`mb-4 text-[12px] ${isMinimal ? 'text-[#8A8070] font-body uppercase tracking-widest' : 'text-[#AAAAAA]'}`}>
+          <div className={`mb-4 text-[12px] ${isMinimal ? 'text-[#5A4A3A] font-body uppercase tracking-widest' : 'text-[#AAAAAA]'}`}>
             {showModeration 
               ? `${pendingPublications.length} ${pendingPublications.length === 1 ? 'pendiente' : 'pendientes'}`
               : `${filteredPubs.length} ${filteredPubs.length === 1 ? 'entrada' : 'entradas'}`
@@ -1149,7 +1320,16 @@ export default function App() {
                   key={pub.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
+                  role={editingPubId === pub.id ? undefined : 'button'}
+                  tabIndex={editingPubId === pub.id ? undefined : 0}
+                  aria-label={editingPubId === pub.id ? undefined : `Ver "${challengeTitle}", de ${pub.authorName}`}
                   onClick={() => editingPubId !== pub.id && navigateToSource(pub)}
+                  onKeyDown={(e) => {
+                    if (editingPubId !== pub.id && (e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+                      e.preventDefault();
+                      navigateToSource(pub);
+                    }
+                  }}
                   className={`group bg-white border border-[#E8E6E0] hover:border-[#8F8E88] rounded-[2px] p-[24px] flex flex-col transition-all duration-[150ms] relative ${
                     isFeatured ? 'lg:col-span-2' : ''
                   } ${editingPubId === pub.id ? 'cursor-default border-[#1C1510]' : 'cursor-pointer'}`}
@@ -1167,7 +1347,7 @@ export default function App() {
                         setChallengeNameFilter(challengeTitle);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
-                      className="text-[10px] uppercase tracking-[0.12em] text-[#8A8070] font-body font-bold hover:text-[#1C1510] hover:underline decoration-dotted underline-offset-4 transition-all"
+                      className="text-[10px] uppercase tracking-[0.12em] text-[#5A4A3A] font-body font-bold hover:text-[#1C1510] hover:underline decoration-dotted underline-offset-4 transition-all"
                     >
                       {typeLabel}: {challengeTitle}
                     </span>
@@ -1179,7 +1359,7 @@ export default function App() {
                       <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
                         {/* Vista de comparación: Original */}
                         <div className="p-4 bg-[#F7F4EE] border border-[#E8E6E0] rounded-[2px] opacity-60">
-                          <p className="text-[9px] font-bold uppercase tracking-widest text-[#8A8070] mb-2 [font-variant:small-caps]">Texto Original:</p>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-[#5A4A3A] mb-2 [font-variant:small-caps]">Texto Original:</p>
                           <p className="font-editorial text-[13px] leading-[1.6] whitespace-pre-wrap">{pub.content}</p>
                         </div>
                         
@@ -1197,7 +1377,7 @@ export default function App() {
                         <div className="flex gap-2 justify-end">
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}
-                            className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-[#8A8070] hover:text-[#1C1510] transition-colors"
+                            className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-[#5A4A3A] hover:text-[#1C1510] transition-colors"
                           >
                             Descartar
                           </button>
@@ -1229,10 +1409,10 @@ export default function App() {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                     >
-                      <div className="w-6 h-6 rounded-full bg-[#EDE8DF] border-[0.5px] border-[#C8C2B4] flex items-center justify-center text-[10px] font-bold text-[#8A8070] font-body group-hover/author:bg-[#1C1510] group-hover/author:text-[#F7F4EE] transition-colors">
+                      <div className="w-6 h-6 rounded-full bg-[#EDE8DF] border-[0.5px] border-[#C8C2B4] flex items-center justify-center text-[10px] font-bold text-[#5A4A3A] font-body group-hover/author:bg-[#1C1510] group-hover/author:text-[#F7F4EE] transition-colors">
                         {initials}
                       </div>
-                      <span className="text-[12px] text-[#8A8070] font-body group-hover/author:text-[#1C1510] group-hover/author:underline decoration-dotted underline-offset-4 transition-all">
+                      <span className="text-[12px] text-[#5A4A3A] font-body group-hover/author:text-[#1C1510] group-hover/author:underline decoration-dotted underline-offset-4 transition-all">
                         {pub.authorName}
                       </span>
                     </div>
@@ -1244,7 +1424,7 @@ export default function App() {
                         className={`flex items-center gap-1.5 transition-all ${
                           userLikes[pub.id] 
                             ? 'text-red-500 cursor-default' 
-                            : 'text-[#8A8070] hover:text-red-400 active:scale-125'
+                            : 'text-[#5A4A3A] hover:text-red-400 active:scale-125'
                         }`}
                       >
                         <Heart 
@@ -1264,16 +1444,16 @@ export default function App() {
                   </div>
                   
                   {isAdmin && editingPubId !== pub.id && (
-                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-4 right-4 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleEdit(pub); }}
-                        className="p-2 bg-white border border-[#E8E6E0] rounded-[2px] text-[#8A8070] hover:text-[#1C1510] hover:border-[#8F8E88]"
+                        className="p-2 bg-white border border-[#E8E6E0] rounded-[2px] text-[#5A4A3A] hover:text-[#1C1510] hover:border-[#8F8E88]"
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleDelete(pub.id); }}
-                        className="p-2 bg-white border border-[#E8E6E0] rounded-[2px] text-[#8A8070] hover:text-red-600 hover:border-red-200"
+                        className="p-2 bg-white border border-[#E8E6E0] rounded-[2px] text-[#5A4A3A] hover:text-red-600 hover:border-red-200"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1292,10 +1472,10 @@ export default function App() {
               className="border border-dashed border-[#C8C2B4] rounded-[2px] p-8 flex flex-col items-center justify-center text-center min-h-[200px] cursor-pointer hover:bg-[#EDE8DF] transition-all duration-[150ms]"
             >
               <div className="w-10 h-10 rounded-full bg-[#F7F4EE] border border-[#C8C2B4] flex items-center justify-center mb-4">
-                <Plus className="w-5 h-5 text-[#8A8070]" />
+                <Plus className="w-5 h-5 text-[#5A4A3A]" />
               </div>
               <p className="text-[14px] text-[#1C1510] font-bold uppercase tracking-widest mb-1 font-body">Añade tu texto</p>
-              <p className="text-[12px] text-[#8A8070] font-body italic">Elige un reto y publica</p>
+              <p className="text-[12px] text-[#5A4A3A] font-body italic">Elige un reto y publica</p>
             </motion.div>
           </div>
         </div>
@@ -1303,37 +1483,20 @@ export default function App() {
     );
   };
 
-  const [activeLabTool, setActiveLabTool] = useState<string | null>(null);
-
   const renderLab = () => {
     const isMinimal = theme === 'minimal';
 
     if (activeLabTool === 'microstory') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          {isMinimal && (
-            <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
-              <div 
-                className="font-editorial font-bold text-[15px] cursor-pointer"
-                onClick={() => setView('home')}
-              >
-                Ponte Creativo
-              </div>
-              <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-                <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-                <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-                <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
-                <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
-              </div>
-            </nav>
-          )}
+          {isMinimal && renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
                 setActiveLabTool(null);
                 setWritingContent('');
               }}
-              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#8A8070] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
             >
               <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
             </button>
@@ -1366,29 +1529,14 @@ export default function App() {
     if (activeLabTool === 'weatheraction') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          {isMinimal && (
-            <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
-              <div 
-                className="font-editorial font-bold text-[15px] cursor-pointer"
-                onClick={() => setView('home')}
-              >
-                Ponte Creativo
-              </div>
-              <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-                <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-                <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-                <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
-                <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
-              </div>
-            </nav>
-          )}
+          {isMinimal && renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
                 setActiveLabTool(null);
                 setWritingContent('');
               }}
-              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#8A8070] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
             >
               <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
             </button>
@@ -1421,29 +1569,14 @@ export default function App() {
     if (activeLabTool === 'surrealdialog') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          {isMinimal && (
-            <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
-              <div 
-                className="font-editorial font-bold text-[15px] cursor-pointer"
-                onClick={() => setView('home')}
-              >
-                Ponte Creativo
-              </div>
-              <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-                <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-                <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-                <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
-                <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
-              </div>
-            </nav>
-          )}
+          {isMinimal && renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
                 setActiveLabTool(null);
                 setWritingContent('');
               }}
-              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#8A8070] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
             >
               <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
             </button>
@@ -1476,29 +1609,14 @@ export default function App() {
     if (activeLabTool === 'poetrysays') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          {isMinimal && (
-            <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
-              <div 
-                className="font-editorial font-bold text-[15px] cursor-pointer"
-                onClick={() => setView('home')}
-              >
-                Ponte Creativo
-              </div>
-              <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-                <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); setChallengeFilter(null); setChallengeNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-                <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); setChallengeFilter(null); setChallengeNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-                <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); setChallengeFilter(null); setChallengeNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
-                <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); setChallengeFilter(null); setChallengeNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
-              </div>
-            </nav>
-          )}
+          {isMinimal && renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
                 setActiveLabTool(null);
                 setWritingContent('');
               }}
-              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#8A8070] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
             >
               <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
             </button>
@@ -1530,22 +1648,7 @@ export default function App() {
 
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-        {isMinimal && (
-          <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
-            <div 
-              className="font-editorial font-bold text-[15px] cursor-pointer"
-              onClick={() => setView('home')}
-            >
-              Ponte Creativo
-            </div>
-            <div className="flex gap-6 text-[11px] font-body font-normal uppercase tracking-[0.12em] text-[#8A8070] [font-variant:small-caps]">
-              <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Retos</button>
-              <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Laboratorio</button>
-              <button onClick={() => { setView('home'); setActivePillFilter('Simón dice...'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Simón dice...</button>
-              <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className="hover:text-[#1C1510] transition-colors">Galería</button>
-            </div>
-          </nav>
-        )}
+        {isMinimal && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="text-center mb-16">
             <h2 className={`${isMinimal ? 'font-editorial text-[42px] md:text-[64px] leading-[1.05] tracking-[-0.02em]' : 'text-5xl md:text-7xl font-bold'} mb-4 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>
@@ -1604,6 +1707,21 @@ export default function App() {
 
             <motion.div 
               whileHover={{ y: -5 }}
+              onClick={() => setActiveLabTool('poetrysays')}
+              className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] hover:border-[#8F8E88]' : 'card'} p-10 flex flex-col items-center text-center group cursor-pointer transition-all`}
+            >
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+                <Heart className="w-10 h-10" />
+              </div>
+              <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>En poesía se dice...</h3>
+              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Toma una palabra o frase de tu día a día y saca toda tu literatura para decir "lo mismo" con Poesía.</p>
+              <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
+                Abrir Herramienta
+              </button>
+            </motion.div>
+
+            <motion.div 
+              whileHover={{ y: -5 }}
               className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] opacity-50' : 'card opacity-50'} p-10 flex flex-col items-center text-center group transition-all`}
             >
               <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
@@ -1616,17 +1734,294 @@ export default function App() {
               </button>
             </motion.div>
 
-            <div className={`md:col-span-2 p-12 flex flex-col items-center justify-center text-center ${
+            <div className={`md:col-span-2 p-8 md:p-12 ${
               isMinimal 
                 ? 'bg-white border border-[#C8C2B4] rounded-[2px]' 
                 : 'card bg-indigo-600/5 border-dashed border-2 border-indigo-200'
             }`}>
-              <Zap className={`w-12 h-12 mb-4 ${isMinimal ? 'text-[#1C1510]' : 'text-indigo-400'}`} />
-              <h4 className={`text-2xl font-bold mb-2 ${isMinimal ? 'font-editorial' : ''}`}>¿Tienes una herramienta propia?</h4>
-              <p className={`max-w-lg mb-6 ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Estamos listos para integrar tus otras aplicaciones de AI Studio aquí mismo para centralizar tu flujo creativo.</p>
-              <div className={`text-sm font-bold uppercase tracking-widest ${isMinimal ? 'text-[#1C1510]' : 'text-indigo-600'}`}>Listo para integración</div>
+              <div className="max-w-2xl mx-auto flex flex-col items-center text-center">
+                <h4 className={`text-2xl font-bold mb-3 ${isMinimal ? 'font-editorial text-[#1C1510]' : ''}`}>
+                  ¿Tienes una herramienta propia? ¿Alguna idea para incentivar la creatividad?
+                </h4>
+                <p className={`mb-6 text-sm leading-relaxed ${isMinimal ? 'text-[#5A5040]' : 'opacity-60'}`}>
+                  Podemos intentar incorporarla aquí mismo para centralizar tu flujo creativo. Cuentanosla y veremos qué se puede hacer.
+                </p>
+
+                {suggestionSuccess ? (
+                  <div className="w-full p-4 bg-emerald-50 border border-emerald-200 rounded-[2px] text-emerald-800 text-sm font-body flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    ¡Muchas gracias! Tu sugerencia se ha guardado en nuestro buzón privado para revisión.
+                  </div>
+                ) : (
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSendSuggestion(suggestionText);
+                    }}
+                    className="w-full space-y-4 text-left"
+                  >
+                    <textarea
+                      value={suggestionText}
+                      onChange={(e) => setSuggestionText(e.target.value)}
+                      placeholder="Escribe tu propuesta o la idea que te gustaría ver integrada..."
+                      rows={4}
+                      required
+                      className="w-full p-4 border border-[#C8C2B4] focus:border-[#1C1510] focus:ring-0 rounded-[2px] font-body text-sm text-[#1C1510] bg-white placeholder-[#8F8E88] resize-y"
+                    />
+                    
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                      <span className="text-[11px] text-[#5A4A3A] font-body">
+                        {user ? (
+                          <>Enviando como <strong>{user.displayName || user.email}</strong></>
+                        ) : (
+                          <>Enviando como <strong>Invitado</strong></>
+                        )}
+                      </span>
+                      <button
+                        type="submit"
+                        disabled={isSendingSuggestion || !suggestionText.trim()}
+                        className="w-full sm:w-auto bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em] hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        {isSendingSuggestion ? 'Enviando...' : 'Enviar'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSimon = () => {
+    const isMinimal = theme === 'minimal';
+    const simonChallenges = CHALLENGES.filter(c => c.category === 'Simón dice...');
+
+    return (
+      <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
+        {isMinimal && renderMinimalNav()}
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="text-center mb-16">
+            <h2 className={`${isMinimal ? 'font-editorial text-[42px] md:text-[64px] leading-[1.05] tracking-[-0.02em]' : 'text-5xl md:text-7xl font-bold'} mb-4 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>
+              Simón dice...
+            </h2>
+            <p className={`text-xl italic max-w-2xl mx-auto ${isMinimal ? 'text-[#5A5040] font-body' : 'opacity-60'}`}>
+              Trata de crear tu texto cumpliendo exactamente las instrucciones que recibas. Basado en el <a href="https://www.elotrolado.net/hilo_retos-finalizados-del-juego-simon-dice-2_644757" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#1C1510] font-semibold not-italic">Juego Simón dice en Elotrolado.net</a>.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {simonChallenges.map((challenge, idx) => {
+              return (
+                <motion.div
+                  key={challenge.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.03 }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={challenge.title}
+                  onClick={() => {
+                    setPreviousView('simon');
+                    setActiveChallenge(challenge);
+                    setView('challenge');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setPreviousView('simon');
+                      setActiveChallenge(challenge);
+                      setView('challenge');
+                    }
+                  }}
+                  className="group cursor-pointer bg-white border border-[#E8E6E0] p-6 rounded-[2px] hover:border-[#8F8E88] transition-all hover:shadow-sm flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span
+                        className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-[2px]"
+                        style={{ color: 'var(--cat-simon-text)', backgroundColor: 'var(--cat-simon-bg)' }}
+                      >
+                        Simón dice...
+                      </span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#EDE8DF] rounded-[2px] text-[#5A4A3A] flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" /> {challenge.duration || '10 min'}
+                      </span>
+                    </div>
+                    <h3 className="font-editorial text-xl font-bold mb-3 leading-tight text-[#1C1510]">{challenge.title}</h3>
+                    <p className="text-[#5A4A3A] text-sm mb-4 leading-relaxed line-clamp-3 font-body">
+                      {challenge.description}
+                    </p>
+                  </div>
+                  <div className="pt-4 border-t border-[#E8E6E0]">
+                    <p
+                      className="font-editorial italic text-xs text-[#1C1510] rounded-[8px] px-3 py-2 line-clamp-2"
+                      style={{ backgroundColor: 'var(--cat-simon-bg)' }}
+                    >
+                      "{challenge.example}"
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSuggestions = () => {
+    if (!isAdmin) {
+      setView('home');
+      return null;
+    }
+
+    const isMinimal = theme === 'minimal';
+    const starredSuggestions = suggestions.filter(s => s.isStarred);
+    const displayedSuggestions = suggestionsFilter === 'starred' ? starredSuggestions : suggestions;
+
+    return (
+      <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
+        {isMinimal && renderMinimalNav()}
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+            <div>
+              <button 
+                onClick={() => setView('lab')}
+                className="mb-4 text-[#5A4A3A] hover:text-[#1C1510] flex items-center gap-2 font-bold text-[11px] uppercase tracking-[0.12em] transition-colors [font-variant:small-caps]"
+              >
+                ← Volver al Laboratorio
+              </button>
+              <h1 className="font-editorial text-[34px] md:text-[52px] font-bold leading-[1.05] tracking-[-0.02em] text-[#1C1510]">
+                Buzón de Sugerencias
+              </h1>
+              <p className="text-[#5A5040] text-sm mt-2 italic font-body">
+                Panel privado de administración para revisar, destacar o gestionar propuestas e ideas de los usuarios.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSuggestionsFilter('all')}
+                className={`px-4 py-1.5 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all ${
+                  suggestionsFilter === 'all'
+                    ? 'bg-[#1C1510] text-[#F7F4EE]'
+                    : 'bg-[#EDE8DF] text-[#5A4A3A] hover:bg-[#C8C2B4]'
+                }`}
+              >
+                Todas ({suggestions.length})
+              </button>
+              <button
+                onClick={() => setSuggestionsFilter('starred')}
+                className={`px-4 py-1.5 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 ${
+                  suggestionsFilter === 'starred'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+                }`}
+              >
+                <Star className={`w-3 h-3 ${suggestionsFilter === 'starred' ? 'fill-current' : 'fill-amber-500 text-amber-500'}`} />
+                Destacadas ({starredSuggestions.length})
+              </button>
+            </div>
+          </div>
+
+          {displayedSuggestions.length === 0 ? (
+            <div className="bg-white border border-[#E8E6E0] rounded-[2px] p-12 text-center">
+              <Sparkles className="w-8 h-8 text-[#C8C2B4] mx-auto mb-3" />
+              <p className="text-[#5A4A3A] font-body text-sm">
+                {suggestionsFilter === 'starred' 
+                  ? 'No hay sugerencias marcadas como destacadas todavía.' 
+                  : 'Aún no se ha recibido ninguna sugerencia.'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {displayedSuggestions.map((item) => {
+                const formattedDate = item.createdAt?.toDate 
+                  ? item.createdAt.toDate().toLocaleDateString('es-ES', { 
+                      day: 'numeric', 
+                      month: 'short', 
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })
+                  : 'Reciente';
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`bg-white border rounded-[2px] p-6 flex flex-col justify-between transition-all ${
+                      item.isStarred ? 'border-amber-300 ring-1 ring-amber-300 shadow-sm' : 'border-[#E8E6E0]'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex justify-between items-start gap-4 mb-4 pb-3 border-b border-[#E8E6E0]">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-[13px] text-[#1C1510] font-body">
+                              {item.authorName || 'Invitado'}
+                            </span>
+                            {item.authorId === 'guest' ? (
+                              <span className="text-[9px] bg-[#EDE8DF] text-[#5A4A3A] px-1.5 py-0.5 rounded-[2px] font-bold uppercase tracking-widest">
+                                Invitado
+                              </span>
+                            ) : (
+                              <span className="text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-[2px] font-bold uppercase tracking-widest">
+                                Registrado
+                              </span>
+                            )}
+                            {item.isStarred && (
+                              <span className="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-[2px] font-bold uppercase tracking-widest flex items-center gap-1">
+                                <Star className="w-2.5 h-2.5 fill-current" /> Destacado
+                              </span>
+                            )}
+                          </div>
+                          {item.authorEmail && (
+                            <p className="text-[11px] text-[#5A4A3A] font-body">{item.authorEmail}</p>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-[#8F8E88] whitespace-nowrap font-body">
+                          {formattedDate}
+                        </span>
+                      </div>
+
+                      <div className="mb-6 bg-[#FAF8F5] p-4 rounded-[2px] border border-[#E8E6E0]">
+                        <p className="font-editorial text-[15px] leading-[1.7] text-[#1C1510] whitespace-pre-wrap">
+                          {item.content}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-[#E8E6E0]">
+                      <button
+                        onClick={() => handleToggleStarSuggestion(item.id, !!item.isStarred)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] text-[11px] font-bold uppercase tracking-widest transition-colors ${
+                          item.isStarred
+                            ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                            : 'bg-[#EDE8DF] text-[#5A4A3A] hover:bg-[#C8C2B4]'
+                        }`}
+                      >
+                        <Star className={`w-3.5 h-3.5 ${item.isStarred ? 'fill-current text-amber-600' : 'text-[#5A4A3A]'}`} />
+                        {item.isStarred ? 'Destacado' : 'Destacar'}
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteSuggestion(item.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-[2px] text-[11px] font-bold uppercase tracking-widest text-red-600 hover:bg-red-50 transition-colors"
+                        title="Eliminar sugerencia"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1669,8 +2064,15 @@ export default function App() {
 
           <div className="flex items-center gap-6 sans text-sm font-medium">
             <button onClick={() => { setView('home'); setActivePillFilter('Retos'); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'home' && activePillFilter === 'Retos' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Retos</button>
-            <button onClick={() => { setView('home'); setActivePillFilter('Laboratorio'); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'home' && activePillFilter === 'Laboratorio' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Laboratorio</button>
+            <button onClick={() => { setView('lab'); setActiveLabTool(null); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'lab' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Laboratorio</button>
+            <button onClick={() => { setView('simon'); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'simon' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Simón dice...</button>
             <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'gallery' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Galería</button>
+            {isAdmin && (
+              <button onClick={() => setView('suggestions')} className={`hover:opacity-100 transition-all flex items-center gap-1 ${view === 'suggestions' ? 'opacity-100 font-bold text-amber-600' : 'opacity-40'}`}>
+                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                Sugerencias
+              </button>
+            )}
             {user ? (
               <div className="flex items-center gap-4">
                 <span className="hidden md:inline opacity-40">Hola, {user.displayName?.split(' ')[0]}</span>
@@ -1698,6 +2100,8 @@ export default function App() {
             {view === 'challenge' && renderChallenge()}
             {view === 'gallery' && renderGallery()}
             {view === 'lab' && renderLab()}
+            {view === 'simon' && renderSimon()}
+            {view === 'suggestions' && renderSuggestions()}
             {view === 'time-challenge' && renderTimeChallenge()}
             {view === 'privacy' && <PrivacyPolicy onBack={() => setView('home')} theme={theme} />}
             {view === 'terms' && <TermsAndConditions onBack={() => setView('home')} theme={theme} />}
@@ -1729,6 +2133,12 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        theme={theme} 
+      />
     </div>
   );
 }

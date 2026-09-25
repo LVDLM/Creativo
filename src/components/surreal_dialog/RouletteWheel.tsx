@@ -52,11 +52,14 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({ targetWord, isSpinning, d
       </div>
       
       <div className="relative w-full">
-        <div className={`relative w-full h-[56px] bg-white overflow-hidden border-2 border-black z-10 ${
-          isMinimal 
-            ? 'rounded-[2px] shadow-sm' 
-            : 'rounded-xl md:rounded-2xl shadow-[4px_4px_0px_rgba(0,0,0,1)] md:shadow-[6px_6px_0px_rgba(0,0,0,1)]'
-        }`}>
+        <div
+          aria-hidden="true"
+          className={`relative w-full h-[56px] bg-white overflow-hidden border-2 border-black z-10 ${
+            isMinimal 
+              ? 'rounded-[2px] shadow-sm' 
+              : 'rounded-xl md:rounded-2xl shadow-[4px_4px_0px_rgba(0,0,0,1)] md:shadow-[6px_6px_0px_rgba(0,0,0,1)]'
+          }`}
+        >
           <div 
             className="flex flex-col"
             style={transitionStyle}
@@ -79,6 +82,10 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({ targetWord, isSpinning, d
           <div className="absolute inset-x-0 top-0 h-3 bg-gradient-to-b from-slate-100/60 to-transparent pointer-events-none" />
           <div className="absolute inset-x-0 bottom-0 h-3 bg-gradient-to-t from-slate-100/60 to-transparent pointer-events-none" />
         </div>
+        {/* Para lectores de pantalla: la animación es puramente visual, aquí se anuncia el resultado */}
+        <p className="sr-only" aria-live="polite">
+          {isDone ? `Personaje ${index + 1}: ${targetWord}` : ''}
+        </p>
       </div>
     </div>
   );

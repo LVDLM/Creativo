@@ -103,8 +103,9 @@ const ContactForm: React.FC<ContactFormProps> = ({ onBack, theme, user }) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest opacity-40 sans">Nombre</label>
+                <label htmlFor="contact-name" className="text-xs font-bold uppercase tracking-widest opacity-40 sans">Nombre</label>
                 <input 
+                  id="contact-name"
                   type="text"
                   required
                   value={formData.name}
@@ -114,8 +115,9 @@ const ContactForm: React.FC<ContactFormProps> = ({ onBack, theme, user }) => {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest opacity-40 sans">Email</label>
+                <label htmlFor="contact-email" className="text-xs font-bold uppercase tracking-widest opacity-40 sans">Email</label>
                 <input 
+                  id="contact-email"
                   type="email"
                   required
                   value={formData.email}
@@ -127,8 +129,9 @@ const ContactForm: React.FC<ContactFormProps> = ({ onBack, theme, user }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest opacity-40 sans">Asunto</label>
+              <label htmlFor="contact-subject" className="text-xs font-bold uppercase tracking-widest opacity-40 sans">Asunto</label>
               <input 
+                id="contact-subject"
                 type="text"
                 required
                 value={formData.subject}
@@ -139,8 +142,9 @@ const ContactForm: React.FC<ContactFormProps> = ({ onBack, theme, user }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest opacity-40 sans">Mensaje</label>
+              <label htmlFor="contact-message" className="text-xs font-bold uppercase tracking-widest opacity-40 sans">Mensaje</label>
               <textarea 
+                id="contact-message"
                 required
                 rows={6}
                 value={formData.message}

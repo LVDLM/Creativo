@@ -70,6 +70,20 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "email", "message", "createdAt"]
+    },
+    "Suggestion": {
+      "title": "Suggestion",
+      "description": "User suggestions for new tools or creative ideas.",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorEmail": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isStarred": { "type": "boolean" }
+      },
+      "required": ["content", "createdAt"]
     }
   },
   "firestore": {
@@ -84,6 +98,10 @@
     "/contact_messages/{messageId}": {
       "schema": "ContactMessage",
       "description": "Messages sent by users via the contact form."
+    },
+    "/suggestions/{suggestionId}": {
+      "schema": "Suggestion",
+      "description": "Private suggestions for new tools or ideas, visible only to admins."
     }
   }
 }

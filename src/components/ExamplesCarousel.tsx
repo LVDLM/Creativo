@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Publication } from '../types';
 
@@ -49,7 +49,7 @@ export const ExamplesCarousel: React.FC<ExamplesCarouselProps> = ({
             onClick={() => setShowExamples(true)}
             className={`flex items-center gap-2 font-bold hover:underline ${isMinimal ? 'text-[#1C1510] text-[12px] tracking-[0.06em]' : 'text-indigo-600'}`}
           >
-            <Sparkles className="w-4 h-4" /> Ver ejemplos de otros escritores e inspirarse
+            Ver ejemplos de otros escritores e inspirarse
           </motion.button>
         ) : (
           <motion.div 

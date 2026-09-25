@@ -78,7 +78,7 @@ export const WeatherActionLab: React.FC<WeatherActionLabProps> = ({
       {/* Controls */}
       <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-12">
         <div className="flex items-center gap-4">
-          <span className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#8A8070] [font-variant:small-caps]' : 'opacity-40'}`}>Dados:</span>
+          <span className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#5A4A3A] [font-variant:small-caps]' : 'opacity-40'}`}>Dados:</span>
           <div className={`flex items-center p-1 ${isMinimal ? 'bg-[#EDE8DF] rounded-[2px]' : theme === 'modern' ? 'bg-indigo-50 rounded-full' : 'bg-stone-100 rounded-full'}`}>
             <button 
               onClick={() => setDiceCount(Math.max(1, diceCount - 1))}
@@ -121,7 +121,16 @@ export const WeatherActionLab: React.FC<WeatherActionLabProps> = ({
               animate={{ scale: 1, rotate: 0 }}
               exit={{ scale: 0, rotate: 180 }}
               whileHover={{ y: -5, scale: 1.05 }}
+              role="button"
+              tabIndex={0}
+              aria-label={`${die.icon.replace(/^\d+-/, '').replace('.png', '').replace(/-/g, ' ')}, pulsa para relanzar`}
               onClick={() => rollOne(index)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  rollOne(index);
+                }
+              }}
               className="relative cursor-pointer group"
             >
               <div 
@@ -134,12 +143,13 @@ export const WeatherActionLab: React.FC<WeatherActionLabProps> = ({
               >
                 <img 
                   src={`https://www.revistahabla.com/creatividad/apps/img/icons/${die.icon}`} 
-                  alt={die.icon}
+                  alt=""
+                  aria-hidden="true"
                   className="w-14 h-14 md:w-16 md:h-16 object-contain"
                   referrerPolicy="no-referrer"
                 />
               </div>
-              <div className="absolute -top-2 -right-2 bg-black text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+              <div aria-hidden="true" className="absolute -top-2 -right-2 bg-black text-white p-1 rounded-full opacity-70 group-hover:opacity-100 transition-opacity">
                 <RefreshCw className="w-3 h-3" />
               </div>
             </motion.div>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, BookOpen, Info } from 'lucide-react';
 
 interface HelpModalProps {
@@ -7,6 +7,30 @@ interface HelpModalProps {
 }
 
 const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  // Cierra con Escape, mueve el foco al modal al abrir y lo devuelve
+  // al elemento que lo abrió al cerrar (patrón de diálogo accesible).
+  useEffect(() => {
+    if (!isOpen) return;
+
+    previouslyFocused.current = document.activeElement as HTMLElement;
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused.current?.focus();
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -21,16 +45,21 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
       onClick={handleBackdropClick}
     >
       <div 
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="help-modal-title"
         className="bg-white border-2 border-black rounded-[2.5rem] max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-[12px_12px_0px_rgba(0,0,0,1)] cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-8">
           <div className="flex justify-between items-start mb-8">
-            <h2 className="text-4xl font-black text-slate-900 tracking-tighter">
+            <h2 id="help-modal-title" className="text-4xl font-black text-slate-900 tracking-tighter">
               Guía de <span className="text-indigo-600">Vuelo</span>
             </h2>
             <button 
+              ref={closeButtonRef}
               onClick={onClose} 
+              aria-label="Cerrar guía"
               className="p-2 hover:bg-slate-100 border-2 border-black rounded-xl transition-all shadow-[2px_2px_0px_rgba(0,0,0,1)] active:shadow-none"
             >
               <X className="w-6 h-6 text-black" />

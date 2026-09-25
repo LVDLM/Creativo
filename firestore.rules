@@ -114,6 +114,16 @@ service cloud.firestore {
              (!('subject' in data) || data.subject == null || (data.subject is string && data.subject.size() < 200));
     }
 
+    function isValidSuggestion(data) {
+      return data.keys().hasAll(['content', 'createdAt']) &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
+             data.createdAt == request.time &&
+             (!('authorName' in data) || data.authorName == null || (data.authorName is string && data.authorName.size() < 100)) &&
+             (!('authorId' in data) || data.authorId == null || (data.authorId is string && data.authorId.size() < 100)) &&
+             (!('authorEmail' in data) || data.authorEmail == null || (data.authorEmail is string && data.authorEmail.size() < 200)) &&
+             (!('isStarred' in data) || data.isStarred is bool);
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -164,6 +174,14 @@ service cloud.firestore {
       
       // Only admins can read contact messages
       allow read: if isAdmin();
+    }
+
+    match /suggestions/{suggId} {
+      // Anyone can submit a suggestion
+      allow create: if isValidSuggestion(request.resource.data);
+      
+      // Only admins can read, update (star/unstar), and delete suggestions
+      allow read, update, delete: if isAdmin();
     }
 
     // Default deny
