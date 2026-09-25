@@ -609,8 +609,8 @@ export default function App() {
           <div className="flex flex-col md:flex-row gap-10 mb-10 items-start">
             {/* Columna izquierda */}
             <div className="flex-1 md:max-w-[760px]">
-              <p className="text-[#5A5040] text-[14px] leading-[1.75] mb-6 max-w-[480px]">
-                Desbloquea tu creatividad con retos de escritura de diez minutos. Un espacio diseñado para quienes aman las palabras y el tiempo bien invertido.
+              <p className="text-[#5A5040] text-[14px] leading-[1.75] mb-6 max-w-[520px]">
+                Desbloquea tu creatividad con retos de escritura. Explora, elige, prueba y deja que fluya. Este es un espacio diseñado para quienes aman las palabras y el tiempo bien invertido.
               </p>
               <div className="flex flex-wrap md:flex-nowrap gap-[10px]">
                 <button 
