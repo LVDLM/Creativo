@@ -492,7 +492,7 @@ export default function App() {
             <Mail className="w-3 h-3" /> Mensajes {contactMessages.filter(message => !message.isRead).length > 0 && `(${contactMessages.filter(message => !message.isRead).length})`}
           </button>
           <button 
-            onClick={() => setView('suggestions') 
+            onClick={() => setView('suggestions')}
             className={`hover:text-[#1C1510] transition-colors flex items-center gap-1.5 ${view === 'suggestions' ? 'text-[#1C1510] font-bold' : ''}`}
           >
             <Star className="w-3 h-3 text-amber-600 fill-amber-500" />
