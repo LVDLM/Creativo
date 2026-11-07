@@ -27,32 +27,14 @@ const ContactForm: React.FC<ContactFormProps> = ({ onBack, theme, user }) => {
     setErrorMessage('');
 
     try {
-      // 1. Save to Firestore as backup/record
       await addDoc(collection(db, 'contact_messages'), {
         ...formData,
+        isRead: false,
         createdAt: serverTimestamp()
       });
 
-      // 2. Call server-side API to send email
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setStatus('success');
-        setFormData({ ...formData, subject: '', message: '' });
-      } else {
-        // Even if email fails, if Firestore succeeded, we could consider it a partial success
-        // but for now let's show the error from the API
-        setStatus('error');
-        setErrorMessage(data.error || 'Error al enviar el mensaje por email.');
-      }
+      setStatus('success');
+      setFormData({ ...formData, subject: '', message: '' });
     } catch (error) {
       console.error('Error submitting contact form:', error);
       setStatus('error');
@@ -90,8 +72,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ onBack, theme, user }) => {
             className={`p-10 rounded-3xl text-center border ${theme === 'modern' ? 'bg-indigo-50 border-indigo-100' : 'bg-stone-100 border-stone-200'}`}
           >
             <CheckCircle2 className={`w-16 h-16 mx-auto mb-6 ${theme === 'modern' ? 'text-indigo-600' : 'text-stone-700'}`} />
-            <h2 className={`text-2xl font-bold mb-4 ${theme === 'modern' ? 'display' : 'font-editorial'}`}>¡Mensaje Enviado!</h2>
-            <p className="opacity-60 mb-8">Gracias por contactar con Ponte Creativo. Te responderemos lo antes posible.</p>
+            <h2 className={`text-2xl font-bold mb-4 ${theme === 'modern' ? 'display' : 'font-editorial'}`}>¡Mensaje Recibido!</h2>
+            <p className="opacity-60 mb-8">Gracias por contactar con Ponte Creativo. Tu mensaje se ha guardado en nuestro buzón privado y lo revisaremos desde administración.</p>
             <button 
               onClick={() => setStatus('idle')}
               className={`${theme === 'minimal' ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}
