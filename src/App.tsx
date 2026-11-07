@@ -319,7 +319,7 @@ export default function App() {
           content: finalContent,
           createdAt: serverTimestamp(),
           isModerated: !isGuest, // Published directly if logged in, otherwise needs moderation
-          status: isGuest ? 'pending' : 'approved',
+          status: 'pending',
           isGuest: isGuest,
           likesCount: 0
         });
@@ -364,7 +364,7 @@ export default function App() {
         content: content,
         createdAt: serverTimestamp(),
         isModerated: !isGuest,
-        status: isGuest ? 'pending' : 'approved',
+        status: 'pending',
         isGuest: isGuest,
         likesCount: 0
       });
