@@ -17,7 +17,7 @@ import {
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db, loginWithGoogle, logout } from './firebase';
 import { CHALLENGES, PONTE_SUB_PROMPTS, STARTING_PHRASES } from './constants';
-import { Challenge, Publication, OperationType, FirestoreErrorInfo, Suggestion } from './types';
+import { Challenge, Publication, OperationType, FirestoreErrorInfo, Suggestion, ContactMessage } from './types';
 import { MicroStoryLab } from './components/MicroStoryLab';
 import { WeatherActionLab } from './components/WeatherActionLab';
 import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
@@ -48,6 +48,7 @@ import {
   AlertCircle,
   CloudSun,
   MessageSquare,
+  Mail,
   Dices,
   Ghost,
   Search,
@@ -100,11 +101,12 @@ export default function App() {
   const [theme, setTheme] = useState<'organic' | 'modern' | 'minimal'>('minimal');
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [pontePrompt, setPontePrompt] = useState<any>(null);
-  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'privacy' | 'terms' | 'contact' | 'time-challenge'>('home');
+  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'contact-inbox' | 'privacy' | 'terms' | 'contact' | 'time-challenge'>('home');
   const [previousView, setPreviousView] = useState<'home' | 'lab' | 'simon' | 'gallery'>('home');
   const [publications, setPublications] = useState<Publication[]>([]);
   const [pendingPublications, setPendingPublications] = useState<Publication[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   const [suggestionText, setSuggestionText] = useState('');
   const [isSendingSuggestion, setIsSendingSuggestion] = useState(false);
   const [suggestionSuccess, setSuggestionSuccess] = useState(false);
@@ -123,7 +125,7 @@ export default function App() {
   const [challengeNameFilter, setChallengeNameFilter] = useState<string | null>(null);
   const [showModeration, setShowModeration] = useState(false);
 
-  const isAdmin = user?.email === 'lavozdelosmuertos@gmail.com';
+  const isAdmin = user?.email === 'lavozdelosmuertos@gmail.com' && user.emailVerified;
   const [showExamples, setShowExamples] = useState(false);
   const [openFilterDropdown, setOpenFilterDropdown] = useState<'retos' | 'lab' | null>(null);
   const [currentPhrase, setCurrentPhrase] = useState(STARTING_PHRASES[0]);
@@ -287,6 +289,23 @@ export default function App() {
     return () => unsubscribe();
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (!isAdmin) {
+      setContactMessages([]);
+      return;
+    }
+    const q = query(collection(db, 'contact_messages'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setContactMessages(snapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+      })) as ContactMessage[]);
+    }, (error) => {
+      console.error('Contact inbox subscription error:', error);
+    });
+    return () => unsubscribe();
+  }, [isAdmin]);
+
   // Test connection
   useEffect(() => {
     async function testConnection() {
@@ -398,6 +417,23 @@ export default function App() {
     }
   };
 
+  const handleToggleContactRead = async (id: string, isRead: boolean) => {
+    try {
+      await updateDoc(doc(db, 'contact_messages', id), { isRead: !isRead });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `contact_messages/${id}`);
+    }
+  };
+
+  const handleDeleteContactMessage = async (id: string) => {
+    if (!window.confirm('¿Seguro que deseas eliminar este mensaje?')) return;
+    try {
+      await deleteDoc(doc(db, 'contact_messages', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `contact_messages/${id}`);
+    }
+  };
+
   const handleDeleteSuggestion = async (id: string) => {
     if (!window.confirm('¿Seguro que deseas eliminar esta sugerencia?')) return;
     try {
@@ -451,8 +487,12 @@ export default function App() {
           Galería
         </button>
         {isAdmin && (
+          <>
+          <button onClick={() => setView('contact-inbox')} className={`hover:text-[#1C1510] transition-colors flex items-center gap-1.5 ${view === 'contact-inbox' ? 'text-[#1C1510] font-bold' : ''}`}>
+            <Mail className="w-3 h-3" /> Mensajes {contactMessages.filter(message => !message.isRead).length > 0 && `(${contactMessages.filter(message => !message.isRead).length})`}
+          </button>
           <button 
-            onClick={() => setView('suggestions')} 
+            onClick={() => setView('suggestions') 
             className={`hover:text-[#1C1510] transition-colors flex items-center gap-1.5 ${view === 'suggestions' ? 'text-[#1C1510] font-bold' : ''}`}
           >
             <Star className="w-3 h-3 text-amber-600 fill-amber-500" />
@@ -463,6 +503,7 @@ export default function App() {
               </span>
             )}
           </button>
+          </>
         )}
         {user ? (
           <div className="flex items-center gap-2 border-l border-[#C8C2B4] pl-4 normal-case">
@@ -1187,6 +1228,12 @@ export default function App() {
                   Moderación {pendingPublications.length > 0 && `(${pendingPublications.length})`}
                 </button>
                 <button
+                  onClick={() => setView('contact-inbox')}
+                  className="px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+                >
+                  <Mail className="w-3 h-3 inline mr-1" /> Mensajes {contactMessages.filter(message => !message.isRead).length > 0 && `(${contactMessages.filter(message => !message.isRead).length})`}
+                </button>
+                <button
                   onClick={() => setView('suggestions')}
                   className="px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
                 >
@@ -1873,6 +1920,67 @@ export default function App() {
     );
   };
 
+  const renderContactInbox = () => {
+    if (!isAdmin) {
+      setView('home');
+      return null;
+    }
+
+    const unreadCount = contactMessages.filter(message => !message.isRead).length;
+    return (
+      <div className={`min-h-screen ${theme === 'minimal' ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
+        {theme === 'minimal' && renderMinimalNav()}
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="mb-8">
+            <button onClick={() => setView('gallery')} className="mb-4 text-[#5A4A3A] hover:text-[#1C1510] flex items-center gap-2 font-bold text-[11px] uppercase tracking-widest">
+              ← Volver a la galería
+            </button>
+            <h1 className="font-editorial text-[34px] md:text-[52px] font-bold text-[#1C1510]">Buzón de contacto</h1>
+            <p className="text-[#5A5040] text-sm mt-2 italic">Mensajes privados enviados desde el formulario de contacto.</p>
+            <p className="text-xs text-[#8F8E88] mt-2">{contactMessages.length} mensajes · {unreadCount} sin leer</p>
+          </div>
+          {contactMessages.length === 0 ? (
+            <div className="bg-white border border-[#E8E6E0] rounded-[2px] p-12 text-center">
+              <Mail className="w-8 h-8 text-[#C8C2B4] mx-auto mb-3" />
+              <p className="text-[#5A4A3A] text-sm">Todavía no has recibido mensajes.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {contactMessages.map(message => {
+                const formattedDate = message.createdAt?.toDate
+                  ? message.createdAt.toDate().toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })
+                  : 'Fecha reciente';
+                return (
+                  <article key={message.id} className={`bg-white border rounded-[2px] p-5 md:p-6 ${message.isRead ? 'border-[#E8E6E0]' : 'border-red-200 ring-1 ring-red-100'}`}>
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2 className="font-bold text-[#1C1510]">{message.subject || 'Sin asunto'}</h2>
+                          {!message.isRead && <span className="text-[9px] bg-red-100 text-red-700 px-2 py-1 rounded-[2px] font-bold uppercase tracking-widest">Nuevo</span>}
+                        </div>
+                        <p className="text-sm text-[#5A4A3A] mt-1">{message.name} · <a className="underline" href={`mailto:${message.email}`}>{message.email}</a></p>
+                      </div>
+                      <time className="text-xs text-[#8F8E88]">{formattedDate}</time>
+                    </div>
+                    <p className="bg-[#FAF8F5] border border-[#E8E6E0] p-4 text-sm leading-relaxed whitespace-pre-wrap text-[#1C1510]">{message.message}</p>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <button onClick={() => handleToggleContactRead(message.id, !!message.isRead)} className="px-3 py-2 bg-[#EDE8DF] text-[#5A4A3A] text-[10px] font-bold uppercase tracking-widest hover:bg-[#C8C2B4]">
+                        {message.isRead ? 'Marcar como no leído' : 'Marcar como leído'}
+                      </button>
+                      <button onClick={() => handleDeleteContactMessage(message.id)} className="px-3 py-2 bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-widest hover:bg-red-100">
+                        <Trash2 className="w-3 h-3 inline mr-1" /> Eliminar
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderSuggestions = () => {
     if (!isAdmin) {
       setView('home');
@@ -2068,10 +2176,16 @@ export default function App() {
             <button onClick={() => { setView('simon'); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'simon' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Simón dice...</button>
             <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'gallery' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Galería</button>
             {isAdmin && (
+              <>
+              <button onClick={() => setView('contact-inbox')} className={`hover:opacity-100 transition-all flex items-center gap-1 ${view === 'contact-inbox' ? 'opacity-100 font-bold text-red-600' : 'opacity-40'}`}>
+                <Mail className="w-3.5 h-3.5" /> Mensajes
+                {contactMessages.filter(message => !message.isRead).length > 0 && ` (${contactMessages.filter(message => !message.isRead).length})`}
+              </button>
               <button onClick={() => setView('suggestions')} className={`hover:opacity-100 transition-all flex items-center gap-1 ${view === 'suggestions' ? 'opacity-100 font-bold text-amber-600' : 'opacity-40'}`}>
                 <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                 Sugerencias
               </button>
+              </>
             )}
             {user ? (
               <div className="flex items-center gap-4">
@@ -2102,6 +2216,7 @@ export default function App() {
             {view === 'lab' && renderLab()}
             {view === 'simon' && renderSimon()}
             {view === 'suggestions' && renderSuggestions()}
+            {view === 'contact-inbox' && renderContactInbox()}
             {view === 'time-challenge' && renderTimeChallenge()}
             {view === 'privacy' && <PrivacyPolicy onBack={() => setView('home')} theme={theme} />}
             {view === 'terms' && <TermsAndConditions onBack={() => setView('home')} theme={theme} />}
