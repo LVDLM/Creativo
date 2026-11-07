@@ -25,6 +25,16 @@ export interface Publication {
   isGuest?: boolean;
 }
 
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
+  createdAt: any;
+  isRead?: boolean;
+}
+
 export interface Suggestion {
   id: string;
   content: string;
