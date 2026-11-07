@@ -69,11 +69,11 @@ service cloud.firestore {
              data.authorName is string && data.authorName.size() > 0 && data.authorName.size() < 100 &&
              data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
              data.createdAt == request.time &&
-             data.isModerated is bool &&
+             data.isModerated == true &&
+             data.status == 'pending' &&
+             data.isGuest == false &&
              (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200)) &&
-             (!('likesCount' in data) || data.likesCount is int) &&
-             (!('status' in data) || data.status in ['pending', 'approved', 'rejected']) &&
-             (!('isGuest' in data) || data.isGuest == false);
+             (!('likesCount' in data) || data.likesCount == 0);
     }
 
     function isValidGuestPublication(data) {
@@ -139,7 +139,7 @@ service cloud.firestore {
                        (!isAuthenticated() && isValidGuestPublication(request.resource.data));
       
       // Only owners or admins can delete
-      allow delete: if isDocOwner() || isAdmin();
+      allow delete: if isAdmin();
       
       // Admins can update publications (for manual moderation/editing)
       // Users can increment likesCount if they have created a like document
@@ -172,13 +172,16 @@ service cloud.firestore {
       // Anyone can create a contact message
       allow create: if isValidContactMessage(request.resource.data);
       
-      // Only admins can read contact messages
-      allow read: if isAdmin();
+      // Only admins can read, update, and delete contact messages
+      allow read, update, delete: if isAdmin();
     }
 
     match /suggestions/{suggId} {
       // Anyone can submit a suggestion
-      allow create: if isValidSuggestion(request.resource.data);
+      allow create: if isValidSuggestion(request.resource.data) &&
+        request.resource.data.isStarred == false &&
+        request.resource.data.authorId == (isAuthenticated() ? request.auth.uid : 'guest') &&
+        (!isAuthenticated() || request.resource.data.authorEmail == request.auth.token.email);
       
       // Only admins can read, update (star/unstar), and delete suggestions
       allow read, update, delete: if isAdmin();
