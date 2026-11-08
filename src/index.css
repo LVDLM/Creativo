@@ -39,6 +39,8 @@ body {
 
 /* Theme: Minimal (Literary Magazine Style) — Warm Reinforced palette */
 .theme-minimal {
+  background-color: #F7F4EE;
+  color: #1C1510;
   --bg: #F7F4EE; /* Warm cream */
   --ink: #1C1510; /* Warm black */
   --text-secondary: #5A4A3A; /* Warm brown, AA-compliant (7.2:1 on --bg) */
