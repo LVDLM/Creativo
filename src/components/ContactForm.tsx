@@ -66,7 +66,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ onBack, theme, user, initialT
     : 'Este mensaje llegará únicamente al buzón privado de administración. No se publicará en la galería ni en las sugerencias.';
 
   return (
-    <div className={`min-h-screen py-20 px-6 ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510]' : ''}`}>
+    <div className="min-h-screen py-20 px-6 bg-[var(--bg)] text-[var(--ink)]">
       <div className="max-w-2xl mx-auto">
         <button onClick={onBack} className="flex items-center gap-2 mb-12 opacity-50 hover:opacity-100 transition-opacity sans text-sm font-bold uppercase tracking-widest">
           <ArrowLeft className="w-4 h-4" /> Volver
