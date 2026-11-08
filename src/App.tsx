@@ -436,7 +436,8 @@ export default function App() {
     try {
       await updateDoc(doc(db, 'contact_messages', id), { isRead: !isRead });
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `contact_messages/${id}`);
+      console.error('No se pudo actualizar el estado del mensaje:', error);
+      window.alert('No se pudo actualizar el mensaje. Comprueba tu conexión y que tu sesión de administración siga activa.');
     }
   };
 
@@ -445,7 +446,8 @@ export default function App() {
     try {
       await deleteDoc(doc(db, 'contact_messages', id));
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `contact_messages/${id}`);
+      console.error('No se pudo eliminar el mensaje:', error);
+      window.alert('No se pudo eliminar el mensaje. Comprueba tu conexión y que tu sesión de administración siga activa.');
     }
   };
 
