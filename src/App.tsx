@@ -17,7 +17,7 @@ import {
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db, loginWithGoogle, logout } from './firebase';
 import { CHALLENGES, PONTE_SUB_PROMPTS, STARTING_PHRASES } from './constants';
-import { Challenge, Publication, OperationType, FirestoreErrorInfo, Suggestion } from './types';
+import { Challenge, Publication, OperationType, FirestoreErrorInfo, Suggestion, ContactMessage } from './types';
 import { MicroStoryLab } from './components/MicroStoryLab';
 import { WeatherActionLab } from './components/WeatherActionLab';
 import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
@@ -48,6 +48,7 @@ import {
   AlertCircle,
   CloudSun,
   MessageSquare,
+  Mail,
   Dices,
   Ghost,
   Search,
@@ -68,7 +69,8 @@ import {
   Star,
   Heart,
   X,
-  XCircle
+  XCircle,
+  Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -100,14 +102,22 @@ export default function App() {
   const [theme, setTheme] = useState<'organic' | 'modern' | 'minimal'>('minimal');
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [pontePrompt, setPontePrompt] = useState<any>(null);
-  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'privacy' | 'terms' | 'contact' | 'time-challenge'>('home');
-  const [previousView, setPreviousView] = useState<'home' | 'lab' | 'simon' | 'gallery'>('home');
+  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'contact-inbox' | 'admin' | 'privacy' | 'terms' | 'contact' | 'time-challenge'>(() => {
+    const routes: Record<string, any> = {
+      '#retos': 'home',
+      '#galeria': 'gallery',
+      '#laboratorio': 'lab',
+      '#simon-dice': 'simon',
+      '#ideas-contacto': 'contact'
+    };
+    return routes[window.location.hash] || 'home';
+  });
+  const [previousView, setPreviousView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'contact-inbox' | 'admin' | 'privacy' | 'terms' | 'time-challenge'>('home');
   const [publications, setPublications] = useState<Publication[]>([]);
   const [pendingPublications, setPendingPublications] = useState<Publication[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [suggestionText, setSuggestionText] = useState('');
-  const [isSendingSuggestion, setIsSendingSuggestion] = useState(false);
-  const [suggestionSuccess, setSuggestionSuccess] = useState(false);
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+  const [contactFormType, setContactFormType] = useState<'suggestion' | 'contact'>('contact');
   const [suggestionsFilter, setSuggestionsFilter] = useState<'all' | 'starred'>('all');
   const [userLikes, setUserLikes] = useState<Record<string, boolean>>({});
   const [writingContent, setWritingContent] = useState('');
@@ -123,7 +133,7 @@ export default function App() {
   const [challengeNameFilter, setChallengeNameFilter] = useState<string | null>(null);
   const [showModeration, setShowModeration] = useState(false);
 
-  const isAdmin = user?.email === 'lavozdelosmuertos@gmail.com';
+  const isAdmin = user?.email === 'lavozdelosmuertos@gmail.com' && user.emailVerified;
   const [showExamples, setShowExamples] = useState(false);
   const [openFilterDropdown, setOpenFilterDropdown] = useState<'retos' | 'lab' | null>(null);
   const [currentPhrase, setCurrentPhrase] = useState(STARTING_PHRASES[0]);
@@ -194,6 +204,35 @@ export default function App() {
       setIsAuthReady(true);
     });
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const routeByView: Record<string, string> = {
+      home: '#retos',
+      gallery: '#galeria',
+      lab: '#laboratorio',
+      simon: '#simon-dice',
+      contact: '#ideas-contacto'
+    };
+    const hash = routeByView[view];
+    if (hash && window.location.hash !== hash) {
+      window.history.replaceState(null, '', hash);
+    } else if (!hash && window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }, [view]);
+
+  useEffect(() => {
+    const viewByRoute: Record<string, any> = {
+      '#retos': 'home',
+      '#galeria': 'gallery',
+      '#laboratorio': 'lab',
+      '#simon-dice': 'simon',
+      '#ideas-contacto': 'contact'
+    };
+    const handleRouteChange = () => setView(viewByRoute[window.location.hash] || 'home');
+    window.addEventListener('hashchange', handleRouteChange);
+    return () => window.removeEventListener('hashchange', handleRouteChange);
   }, []);
 
   useEffect(() => {
@@ -287,6 +326,23 @@ export default function App() {
     return () => unsubscribe();
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (!isAdmin) {
+      setContactMessages([]);
+      return;
+    }
+    const q = query(collection(db, 'contact_messages'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setContactMessages(snapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+      })) as ContactMessage[]);
+    }, (error) => {
+      console.error('Contact inbox subscription error:', error);
+    });
+    return () => unsubscribe();
+  }, [isAdmin]);
+
   // Test connection
   useEffect(() => {
     async function testConnection() {
@@ -319,7 +375,7 @@ export default function App() {
           content: finalContent,
           createdAt: serverTimestamp(),
           isModerated: !isGuest, // Published directly if logged in, otherwise needs moderation
-          status: isGuest ? 'pending' : 'approved',
+          status: 'pending',
           isGuest: isGuest,
           likesCount: 0
         });
@@ -364,7 +420,7 @@ export default function App() {
         content: content,
         createdAt: serverTimestamp(),
         isModerated: !isGuest,
-        status: isGuest ? 'pending' : 'approved',
+        status: 'pending',
         isGuest: isGuest,
         likesCount: 0
       });
@@ -375,26 +431,21 @@ export default function App() {
     }
   };
 
-  const handleSendSuggestion = async (content: string) => {
-    if (!content.trim()) return;
-    setIsSendingSuggestion(true);
+
+  const handleToggleContactRead = async (id: string, isRead: boolean) => {
     try {
-      const path = 'suggestions';
-      await addDoc(collection(db, path), {
-        content: content.trim(),
-        authorName: (user ? user.displayName : null) || 'Invitado',
-        authorId: user ? user.uid : 'guest',
-        authorEmail: user?.email || null,
-        createdAt: serverTimestamp(),
-        isStarred: false
-      });
-      setSuggestionSuccess(true);
-      setSuggestionText('');
-      setTimeout(() => setSuggestionSuccess(false), 5000);
+      await updateDoc(doc(db, 'contact_messages', id), { isRead: !isRead });
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'suggestions');
-    } finally {
-      setIsSendingSuggestion(false);
+      handleFirestoreError(error, OperationType.UPDATE, `contact_messages/${id}`);
+    }
+  };
+
+  const handleDeleteContactMessage = async (id: string) => {
+    if (!window.confirm('¿Seguro que deseas eliminar este mensaje?')) return;
+    try {
+      await deleteDoc(doc(db, 'contact_messages', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `contact_messages/${id}`);
     }
   };
 
@@ -418,6 +469,7 @@ export default function App() {
   };
 
   const renderMinimalNav = () => (
+    <div className="w-full bg-[#F7F4EE]">
     <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
       <div 
         className="font-editorial font-bold text-[15px] cursor-pointer"
@@ -451,18 +503,16 @@ export default function App() {
           Galería
         </button>
         {isAdmin && (
-          <button 
-            onClick={() => setView('suggestions')} 
-            className={`hover:text-[#1C1510] transition-colors flex items-center gap-1.5 ${view === 'suggestions' ? 'text-[#1C1510] font-bold' : ''}`}
-          >
-            <Star className="w-3 h-3 text-amber-600 fill-amber-500" />
-            Sugerencias
-            {suggestions.length > 0 && (
-              <span className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.2 rounded-full font-bold ml-0.5 normal-case">
-                {suggestions.length}
+          <>
+          <button onClick={() => setView('admin')} className={`hover:text-[#1C1510] transition-colors flex items-center gap-1.5 ${view === 'admin' ? 'text-[#1C1510] font-bold' : ''}`}>
+            <Layout className="w-3 h-3" /> Administración
+            {(pendingPublications.length + suggestions.length + contactMessages.filter(message => !message.isRead).length) > 0 && (
+              <span className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                {pendingPublications.length + suggestions.length + contactMessages.filter(message => !message.isRead).length}
               </span>
             )}
           </button>
+          </>
         )}
         {user ? (
           <div className="flex items-center gap-2 border-l border-[#C8C2B4] pl-4 normal-case">
@@ -480,13 +530,13 @@ export default function App() {
         )}
       </div>
     </nav>
+    </div>
   );
 
   const renderTimeChallenge = () => {
     const isMinimal = theme === 'minimal';
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
-        {isMinimal && renderMinimalNav()}
         <TimeChallenge 
           challenges={CHALLENGES}
           user={user}
@@ -592,7 +642,6 @@ export default function App() {
     return (
       <div className="bg-[#F7F4EE] min-h-screen text-[#1C1510] font-body">
         {/* 5.1 Navegación del Hero */}
-        {renderMinimalNav()}
 
         <div className="max-w-6xl mx-auto px-6">
           {/* 5.2 Encabezado supratítulo */}
@@ -837,7 +886,6 @@ export default function App() {
     if (theme === 'minimal') {
       return (
         <div className="bg-[#F7F4EE] min-h-screen font-body text-[#1C1510]">
-          {renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-16">
             <button 
               onClick={() => {
@@ -1140,7 +1188,6 @@ export default function App() {
 
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
-        {isMinimal && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-16">
           {/* Cabecera de la sección */}
           <div className="mb-10">
@@ -1173,28 +1220,7 @@ export default function App() {
               </button>
             ))}
 
-            {isAdmin && (
-              <>
-                <button
-                  onClick={() => setShowModeration(!showModeration)}
-                  className={`px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
-                    showModeration
-                      ? 'bg-amber-600 text-white shadow-lg shadow-amber-100'
-                      : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                  }`}
-                >
-                  <AlertCircle className="w-3 h-3" />
-                  Moderación {pendingPublications.length > 0 && `(${pendingPublications.length})`}
-                </button>
-                <button
-                  onClick={() => setView('suggestions')}
-                  className="px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
-                >
-                  <Star className="w-3 h-3 text-amber-600 fill-amber-500" />
-                  Sugerencias {suggestions.length > 0 && `(${suggestions.length})`}
-                </button>
-              </>
-            )}
+
 
             {authorFilter && (
               <div className="flex items-center gap-2 ml-auto bg-[#1C1510] text-[#F7F4EE] px-3 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest animate-in fade-in slide-in-from-right-4">
@@ -1489,7 +1515,6 @@ export default function App() {
     if (activeLabTool === 'microstory') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          {isMinimal && renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
@@ -1529,7 +1554,6 @@ export default function App() {
     if (activeLabTool === 'weatheraction') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          {isMinimal && renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
@@ -1569,7 +1593,6 @@ export default function App() {
     if (activeLabTool === 'surrealdialog') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          {isMinimal && renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
@@ -1609,7 +1632,6 @@ export default function App() {
     if (activeLabTool === 'poetrysays') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          {isMinimal && renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
@@ -1648,7 +1670,6 @@ export default function App() {
 
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-        {isMinimal && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="text-center mb-16">
             <h2 className={`${isMinimal ? 'font-editorial text-[42px] md:text-[64px] leading-[1.05] tracking-[-0.02em]' : 'text-5xl md:text-7xl font-bold'} mb-4 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>
@@ -1734,60 +1755,20 @@ export default function App() {
               </button>
             </motion.div>
 
-            <div className={`md:col-span-2 p-8 md:p-12 ${
-              isMinimal 
-                ? 'bg-white border border-[#C8C2B4] rounded-[2px]' 
-                : 'card bg-indigo-600/5 border-dashed border-2 border-indigo-200'
-            }`}>
+            <div className={`md:col-span-2 p-8 md:p-12 ${isMinimal ? 'bg-white border border-[#C8C2B4] rounded-[2px]' : 'card bg-indigo-600/5 border-dashed border-2 border-indigo-200'}`}>
               <div className="max-w-2xl mx-auto flex flex-col items-center text-center">
                 <h4 className={`text-2xl font-bold mb-3 ${isMinimal ? 'font-editorial text-[#1C1510]' : ''}`}>
-                  ¿Tienes una herramienta propia? ¿Alguna idea para incentivar la creatividad?
+                  ¿Tienes una idea para Ponte Creativo?
                 </h4>
                 <p className={`mb-6 text-sm leading-relaxed ${isMinimal ? 'text-[#5A5040]' : 'opacity-60'}`}>
-                  Podemos intentar incorporarla aquí mismo para centralizar tu flujo creativo. Cuentanosla y veremos qué se puede hacer.
+                  Comparte una propuesta para nuevas actividades, juegos o herramientas, o envíanos un mensaje privado.
                 </p>
-
-                {suggestionSuccess ? (
-                  <div className="w-full p-4 bg-emerald-50 border border-emerald-200 rounded-[2px] text-emerald-800 text-sm font-body flex items-center justify-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    ¡Muchas gracias! Tu sugerencia se ha guardado en nuestro buzón privado para revisión.
-                  </div>
-                ) : (
-                  <form 
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleSendSuggestion(suggestionText);
-                    }}
-                    className="w-full space-y-4 text-left"
-                  >
-                    <textarea
-                      value={suggestionText}
-                      onChange={(e) => setSuggestionText(e.target.value)}
-                      placeholder="Escribe tu propuesta o la idea que te gustaría ver integrada..."
-                      rows={4}
-                      required
-                      className="w-full p-4 border border-[#C8C2B4] focus:border-[#1C1510] focus:ring-0 rounded-[2px] font-body text-sm text-[#1C1510] bg-white placeholder-[#8F8E88] resize-y"
-                    />
-                    
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                      <span className="text-[11px] text-[#5A4A3A] font-body">
-                        {user ? (
-                          <>Enviando como <strong>{user.displayName || user.email}</strong></>
-                        ) : (
-                          <>Enviando como <strong>Invitado</strong></>
-                        )}
-                      </span>
-                      <button
-                        type="submit"
-                        disabled={isSendingSuggestion || !suggestionText.trim()}
-                        className="w-full sm:w-auto bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em] hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        {isSendingSuggestion ? 'Enviando...' : 'Enviar'}
-                      </button>
-                    </div>
-                  </form>
-                )}
+                <button
+                  onClick={() => { setPreviousView('lab'); setContactFormType('suggestion'); setView('contact'); }}
+                  className="bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em] hover:opacity-90 transition-all"
+                >
+                  <Send className="w-3.5 h-3.5 inline mr-2" /> Enviar idea o mensaje
+                </button>
               </div>
             </div>
           </div>
@@ -1802,7 +1783,6 @@ export default function App() {
 
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
-        {isMinimal && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="text-center mb-16">
             <h2 className={`${isMinimal ? 'font-editorial text-[42px] md:text-[64px] leading-[1.05] tracking-[-0.02em]' : 'text-5xl md:text-7xl font-bold'} mb-4 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>
@@ -1873,6 +1853,153 @@ export default function App() {
     );
   };
 
+  const renderAdminDashboard = () => {
+    if (!isAdmin) {
+      setView('home');
+      return null;
+    }
+
+    const unreadMessages = contactMessages.filter(message => !message.isRead).length;
+    const starredSuggestions = suggestions.filter(suggestion => suggestion.isStarred).length;
+    const adminCards = [
+      {
+        title: 'Publicaciones',
+        description: 'Revisa las aportaciones de la comunidad. Aprueba las de invitados y gestiona las publicaciones pendientes.',
+        count: pendingPublications.length,
+        countLabel: 'pendientes de revisión',
+        icon: AlertCircle,
+        action: () => { setShowModeration(true); setGalleryFilter('all'); setView('gallery'); },
+        actionLabel: 'Revisar publicaciones',
+        accent: 'amber'
+      },
+      {
+        title: 'Sugerencias',
+        description: 'Consulta las ideas enviadas por los usuarios, destaca las mejores o elimina las que no procedan.',
+        count: suggestions.length,
+        countLabel: 'recibidas',
+        icon: Star,
+        action: () => setView('suggestions'),
+        actionLabel: 'Abrir sugerencias',
+        accent: 'gold'
+      },
+      {
+        title: 'Mensajes de contacto',
+        description: 'Lee los mensajes privados del formulario de contacto y controla cuáles están pendientes.',
+        count: unreadMessages,
+        countLabel: 'sin leer',
+        icon: Mail,
+        action: () => setView('contact-inbox'),
+        actionLabel: 'Abrir mensajes',
+        accent: 'red'
+      }
+    ];
+
+    return (
+      <div className={`min-h-screen ${theme === 'minimal' ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="mb-10">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9A8062] mb-3">Espacio privado</p>
+            <h1 className="font-editorial text-[38px] md:text-[56px] font-bold text-[#1C1510] leading-tight">Panel de administración</h1>
+            <p className="text-[#5A5040] text-sm md:text-base mt-3 italic">Un único lugar para supervisar la actividad y gestionar Ponte Creativo.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+            {adminCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <section key={card.title} className="bg-white border border-[#E8E6E0] rounded-[3px] p-6 flex flex-col min-h-[270px]">
+                  <div className="flex items-start justify-between gap-3 mb-5">
+                    <div className="w-10 h-10 bg-[#F7F4EE] text-[#5A4A3A] flex items-center justify-center rounded-full">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="text-right">
+                      <div className="font-editorial text-[30px] font-bold text-[#1C1510] tabular-nums">{card.count}</div>
+                      <div className="text-[9px] uppercase tracking-widest text-[#8F8E88]">{card.countLabel}</div>
+                    </div>
+                  </div>
+                  <h2 className="font-editorial text-[22px] font-bold text-[#1C1510] mb-2">{card.title}</h2>
+                  <p className="text-sm leading-relaxed text-[#6B6258] flex-grow">{card.description}</p>
+                  <button onClick={card.action} className="mt-6 w-full px-4 py-3 bg-[#1C1510] text-[#F7F4EE] text-[10px] font-bold uppercase tracking-widest hover:bg-[#5A4A3A] transition-colors">
+                    {card.actionLabel} <ChevronRight className="w-3.5 h-3.5 inline ml-1" />
+                  </button>
+                </section>
+              );
+            })}
+          </div>
+
+          <section className="border border-[#D8D0C3] bg-[#F1EDE5] p-6 md:p-8">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-4 h-4 text-[#806B53]" />
+              <h2 className="font-editorial text-xl font-bold text-[#1C1510]">Gestión de usuarios</h2>
+              <span className="text-[9px] uppercase tracking-widest bg-white text-[#806B53] px-2 py-1">Próximamente</span>
+            </div>
+            <p className="text-sm text-[#6B6258] max-w-3xl">La gestión de cuentas y permisos queda fuera de esta primera versión. No se ofrecen cambios de roles desde el navegador para evitar elevar privilegios por error.</p>
+          </section>
+        </div>
+      </div>
+    );
+  };
+
+  const renderContactInbox = () => {
+    if (!isAdmin) {
+      setView('home');
+      return null;
+    }
+
+    const unreadCount = contactMessages.filter(message => !message.isRead).length;
+    return (
+      <div className={`min-h-screen ${theme === 'minimal' ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="mb-8">
+            <button onClick={() => setView('admin')} className="mb-4 text-[#5A4A3A] hover:text-[#1C1510] flex items-center gap-2 font-bold text-[11px] uppercase tracking-widest">
+              ← Volver al panel de administración
+            </button>
+            <h1 className="font-editorial text-[34px] md:text-[52px] font-bold text-[#1C1510]">Buzón de contacto</h1>
+            <p className="text-[#5A5040] text-sm mt-2 italic">Mensajes privados enviados desde el formulario de contacto.</p>
+            <p className="text-xs text-[#8F8E88] mt-2">{contactMessages.length} mensajes · {unreadCount} sin leer</p>
+          </div>
+          {contactMessages.length === 0 ? (
+            <div className="bg-white border border-[#E8E6E0] rounded-[2px] p-12 text-center">
+              <Mail className="w-8 h-8 text-[#C8C2B4] mx-auto mb-3" />
+              <p className="text-[#5A4A3A] text-sm">Todavía no has recibido mensajes.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {contactMessages.map(message => {
+                const formattedDate = message.createdAt?.toDate
+                  ? message.createdAt.toDate().toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })
+                  : 'Fecha reciente';
+                return (
+                  <article key={message.id} className={`bg-white border rounded-[2px] p-5 md:p-6 ${message.isRead ? 'border-[#E8E6E0]' : 'border-red-200 ring-1 ring-red-100'}`}>
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2 className="font-bold text-[#1C1510]">{message.subject || 'Sin asunto'}</h2>
+                          {!message.isRead && <span className="text-[9px] bg-red-100 text-red-700 px-2 py-1 rounded-[2px] font-bold uppercase tracking-widest">Nuevo</span>}
+                        </div>
+                        <p className="text-sm text-[#5A4A3A] mt-1">{message.name} · <a className="underline" href={`mailto:${message.email}`}>{message.email}</a></p>
+                      </div>
+                      <time className="text-xs text-[#8F8E88]">{formattedDate}</time>
+                    </div>
+                    <p className="bg-[#FAF8F5] border border-[#E8E6E0] p-4 text-sm leading-relaxed whitespace-pre-wrap text-[#1C1510]">{message.message}</p>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <button onClick={() => handleToggleContactRead(message.id, !!message.isRead)} className="px-3 py-2 bg-[#EDE8DF] text-[#5A4A3A] text-[10px] font-bold uppercase tracking-widest hover:bg-[#C8C2B4]">
+                        {message.isRead ? 'Marcar como no leído' : 'Marcar como leído'}
+                      </button>
+                      <button onClick={() => handleDeleteContactMessage(message.id)} className="px-3 py-2 bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-widest hover:bg-red-100">
+                        <Trash2 className="w-3 h-3 inline mr-1" /> Eliminar
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderSuggestions = () => {
     if (!isAdmin) {
       setView('home');
@@ -1885,15 +2012,14 @@ export default function App() {
 
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
-        {isMinimal && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
             <div>
               <button 
-                onClick={() => setView('lab')}
+                onClick={() => setView('admin')}
                 className="mb-4 text-[#5A4A3A] hover:text-[#1C1510] flex items-center gap-2 font-bold text-[11px] uppercase tracking-[0.12em] transition-colors [font-variant:small-caps]"
               >
-                ← Volver al Laboratorio
+                ← Volver al Panel de administración
               </button>
               <h1 className="font-editorial text-[34px] md:text-[52px] font-bold leading-[1.05] tracking-[-0.02em] text-[#1C1510]">
                 Buzón de Sugerencias
@@ -2068,10 +2194,11 @@ export default function App() {
             <button onClick={() => { setView('simon'); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'simon' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Simón dice...</button>
             <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'gallery' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Galería</button>
             {isAdmin && (
-              <button onClick={() => setView('suggestions')} className={`hover:opacity-100 transition-all flex items-center gap-1 ${view === 'suggestions' ? 'opacity-100 font-bold text-amber-600' : 'opacity-40'}`}>
-                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                Sugerencias
+              <>
+              <button onClick={() => setView('admin')} className={`hover:opacity-100 transition-all flex items-center gap-1 ${view === 'admin' ? 'opacity-100 font-bold text-amber-600' : 'opacity-40'}`}>
+                <Layout className="w-3.5 h-3.5" /> Administración
               </button>
+              </>
             )}
             {user ? (
               <div className="flex items-center gap-4">
@@ -2087,6 +2214,8 @@ export default function App() {
         </nav>
       )}
 
+      {theme === 'minimal' && renderMinimalNav()}
+
       <main className="flex-grow">
         <AnimatePresence mode="wait">
           <motion.div
@@ -2101,11 +2230,13 @@ export default function App() {
             {view === 'gallery' && renderGallery()}
             {view === 'lab' && renderLab()}
             {view === 'simon' && renderSimon()}
+            {view === 'admin' && renderAdminDashboard()}
             {view === 'suggestions' && renderSuggestions()}
+            {view === 'contact-inbox' && renderContactInbox()}
             {view === 'time-challenge' && renderTimeChallenge()}
             {view === 'privacy' && <PrivacyPolicy onBack={() => setView('home')} theme={theme} />}
             {view === 'terms' && <TermsAndConditions onBack={() => setView('home')} theme={theme} />}
-            {view === 'contact' && <ContactForm onBack={() => setView('home')} theme={theme} user={user} />}
+            {view === 'contact' && <ContactForm onBack={() => setView(previousView)} theme={theme} user={user} initialType={contactFormType} />}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -2127,7 +2258,7 @@ export default function App() {
             <div className="flex gap-8 text-sm opacity-40 sans">
               <button onClick={() => setView('privacy')} className="hover:opacity-100 transition-opacity">Privacidad</button>
               <button onClick={() => setView('terms')} className="hover:opacity-100 transition-opacity">Términos</button>
-              <button onClick={() => setView('contact')} className="hover:opacity-100 transition-opacity">Contacto</button>
+              <button onClick={() => { setPreviousView(view === 'contact' ? 'home' : view); setContactFormType('contact'); setView('contact'); }} className="hover:opacity-100 transition-opacity">Ideas y contacto</button>
             </div>
             <div className="text-center md:text-right space-y-1.5">
               <p className="text-xs opacity-30 sans">© 2026 Ponte Creativo. Todos los derechos reservados.</p>
