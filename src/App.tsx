@@ -2234,7 +2234,7 @@ export default function App() {
             {view === 'time-challenge' && renderTimeChallenge()}
             {view === 'privacy' && <PrivacyPolicy onBack={() => setView('home')} theme={theme} />}
             {view === 'terms' && <TermsAndConditions onBack={() => setView('home')} theme={theme} />}
-            {view === 'contact' && <ContactForm onBack={() => setView(previousView)} theme={theme} user={user} initialType={contactFormType} />}
+            {view === 'contact' && <>{theme === 'minimal' && renderMinimalNav()}<ContactForm onBack={() => setView(previousView)} theme={theme} user={user} initialType={contactFormType} /></>}
           </motion.div>
         </AnimatePresence>
       </main>
