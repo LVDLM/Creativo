@@ -101,7 +101,7 @@ export default function App() {
   const [theme, setTheme] = useState<'organic' | 'modern' | 'minimal'>('minimal');
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [pontePrompt, setPontePrompt] = useState<any>(null);
-  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'contact-inbox' | 'privacy' | 'terms' | 'contact' | 'time-challenge'>('home');
+  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'contact-inbox' | 'admin' | 'privacy' | 'terms' | 'contact' | 'time-challenge'>('home');
   const [previousView, setPreviousView] = useState<'home' | 'lab' | 'simon' | 'gallery'>('home');
   const [publications, setPublications] = useState<Publication[]>([]);
   const [pendingPublications, setPendingPublications] = useState<Publication[]>([]);
@@ -488,18 +488,11 @@ export default function App() {
         </button>
         {isAdmin && (
           <>
-          <button onClick={() => setView('contact-inbox')} className={`hover:text-[#1C1510] transition-colors flex items-center gap-1.5 ${view === 'contact-inbox' ? 'text-[#1C1510] font-bold' : ''}`}>
-            <Mail className="w-3 h-3" /> Mensajes {contactMessages.filter(message => !message.isRead).length > 0 && `(${contactMessages.filter(message => !message.isRead).length})`}
-          </button>
-          <button 
-            onClick={() => setView('suggestions')}
-            className={`hover:text-[#1C1510] transition-colors flex items-center gap-1.5 ${view === 'suggestions' ? 'text-[#1C1510] font-bold' : ''}`}
-          >
-            <Star className="w-3 h-3 text-amber-600 fill-amber-500" />
-            Sugerencias
-            {suggestions.length > 0 && (
-              <span className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.2 rounded-full font-bold ml-0.5 normal-case">
-                {suggestions.length}
+          <button onClick={() => setView('admin')} className={`hover:text-[#1C1510] transition-colors flex items-center gap-1.5 ${view === 'admin' ? 'text-[#1C1510] font-bold' : ''}`}>
+            <Layout className="w-3 h-3" /> Administración
+            {(pendingPublications.length + suggestions.length + contactMessages.filter(message => !message.isRead).length) > 0 && (
+              <span className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                {pendingPublications.length + suggestions.length + contactMessages.filter(message => !message.isRead).length}
               </span>
             )}
           </button>
@@ -1920,6 +1913,94 @@ export default function App() {
     );
   };
 
+  const renderAdminDashboard = () => {
+    if (!isAdmin) {
+      setView('home');
+      return null;
+    }
+
+    const unreadMessages = contactMessages.filter(message => !message.isRead).length;
+    const starredSuggestions = suggestions.filter(suggestion => suggestion.isStarred).length;
+    const adminCards = [
+      {
+        title: 'Publicaciones',
+        description: 'Revisa las aportaciones de la comunidad. Aprueba las de invitados y gestiona las publicaciones pendientes.',
+        count: pendingPublications.length,
+        countLabel: 'pendientes de revisión',
+        icon: AlertCircle,
+        action: () => { setShowModeration(true); setGalleryFilter('all'); setView('gallery'); },
+        actionLabel: 'Revisar publicaciones',
+        accent: 'amber'
+      },
+      {
+        title: 'Sugerencias',
+        description: 'Consulta las ideas enviadas por los usuarios, destaca las mejores o elimina las que no procedan.',
+        count: suggestions.length,
+        countLabel: 'recibidas',
+        icon: Star,
+        action: () => setView('suggestions'),
+        actionLabel: 'Abrir sugerencias',
+        accent: 'gold'
+      },
+      {
+        title: 'Mensajes de contacto',
+        description: 'Lee los mensajes privados del formulario de contacto y controla cuáles están pendientes.',
+        count: unreadMessages,
+        countLabel: 'sin leer',
+        icon: Mail,
+        action: () => setView('contact-inbox'),
+        actionLabel: 'Abrir mensajes',
+        accent: 'red'
+      }
+    ];
+
+    return (
+      <div className={`min-h-screen ${theme === 'minimal' ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
+        {theme === 'minimal' && renderMinimalNav()}
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="mb-10">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9A8062] mb-3">Espacio privado</p>
+            <h1 className="font-editorial text-[38px] md:text-[56px] font-bold text-[#1C1510] leading-tight">Panel de administración</h1>
+            <p className="text-[#5A5040] text-sm md:text-base mt-3 italic">Un único lugar para supervisar la actividad y gestionar Ponte Creativo.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+            {adminCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <section key={card.title} className="bg-white border border-[#E8E6E0] rounded-[3px] p-6 flex flex-col min-h-[270px]">
+                  <div className="flex items-start justify-between gap-3 mb-5">
+                    <div className="w-10 h-10 bg-[#F7F4EE] text-[#5A4A3A] flex items-center justify-center rounded-full">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="text-right">
+                      <div className="font-editorial text-[30px] font-bold text-[#1C1510] tabular-nums">{card.count}</div>
+                      <div className="text-[9px] uppercase tracking-widest text-[#8F8E88]">{card.countLabel}</div>
+                    </div>
+                  </div>
+                  <h2 className="font-editorial text-[22px] font-bold text-[#1C1510] mb-2">{card.title}</h2>
+                  <p className="text-sm leading-relaxed text-[#6B6258] flex-grow">{card.description}</p>
+                  <button onClick={card.action} className="mt-6 w-full px-4 py-3 bg-[#1C1510] text-[#F7F4EE] text-[10px] font-bold uppercase tracking-widest hover:bg-[#5A4A3A] transition-colors">
+                    {card.actionLabel} <ChevronRight className="w-3.5 h-3.5 inline ml-1" />
+                  </button>
+                </section>
+              );
+            })}
+          </div>
+
+          <section className="border border-[#D8D0C3] bg-[#F1EDE5] p-6 md:p-8">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-4 h-4 text-[#806B53]" />
+              <h2 className="font-editorial text-xl font-bold text-[#1C1510]">Gestión de usuarios</h2>
+              <span className="text-[9px] uppercase tracking-widest bg-white text-[#806B53] px-2 py-1">Próximamente</span>
+            </div>
+            <p className="text-sm text-[#6B6258] max-w-3xl">La gestión de cuentas y permisos queda fuera de esta primera versión. No se ofrecen cambios de roles desde el navegador para evitar elevar privilegios por error.</p>
+          </section>
+        </div>
+      </div>
+    );
+  };
+
   const renderContactInbox = () => {
     if (!isAdmin) {
       setView('home');
@@ -1932,8 +2013,8 @@ export default function App() {
         {theme === 'minimal' && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="mb-8">
-            <button onClick={() => setView('gallery')} className="mb-4 text-[#5A4A3A] hover:text-[#1C1510] flex items-center gap-2 font-bold text-[11px] uppercase tracking-widest">
-              ← Volver a la galería
+            <button onClick={() => setView('admin')} className="mb-4 text-[#5A4A3A] hover:text-[#1C1510] flex items-center gap-2 font-bold text-[11px] uppercase tracking-widest">
+              ← Volver al panel de administración
             </button>
             <h1 className="font-editorial text-[34px] md:text-[52px] font-bold text-[#1C1510]">Buzón de contacto</h1>
             <p className="text-[#5A5040] text-sm mt-2 italic">Mensajes privados enviados desde el formulario de contacto.</p>
@@ -1998,10 +2079,10 @@ export default function App() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
             <div>
               <button 
-                onClick={() => setView('lab')}
+                onClick={() => setView('admin')}
                 className="mb-4 text-[#5A4A3A] hover:text-[#1C1510] flex items-center gap-2 font-bold text-[11px] uppercase tracking-[0.12em] transition-colors [font-variant:small-caps]"
               >
-                ← Volver al Laboratorio
+                ← Volver al Panel de administración
               </button>
               <h1 className="font-editorial text-[34px] md:text-[52px] font-bold leading-[1.05] tracking-[-0.02em] text-[#1C1510]">
                 Buzón de Sugerencias
@@ -2177,13 +2258,8 @@ export default function App() {
             <button onClick={() => { setView('gallery'); setAuthorFilter(null); setAuthorNameFilter(null); }} className={`hover:opacity-100 transition-all ${view === 'gallery' ? 'opacity-100 font-bold' : 'opacity-40'}`}>Galería</button>
             {isAdmin && (
               <>
-              <button onClick={() => setView('contact-inbox')} className={`hover:opacity-100 transition-all flex items-center gap-1 ${view === 'contact-inbox' ? 'opacity-100 font-bold text-red-600' : 'opacity-40'}`}>
-                <Mail className="w-3.5 h-3.5" /> Mensajes
-                {contactMessages.filter(message => !message.isRead).length > 0 && ` (${contactMessages.filter(message => !message.isRead).length})`}
-              </button>
-              <button onClick={() => setView('suggestions')} className={`hover:opacity-100 transition-all flex items-center gap-1 ${view === 'suggestions' ? 'opacity-100 font-bold text-amber-600' : 'opacity-40'}`}>
-                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                Sugerencias
+              <button onClick={() => setView('admin')} className={`hover:opacity-100 transition-all flex items-center gap-1 ${view === 'admin' ? 'opacity-100 font-bold text-amber-600' : 'opacity-40'}`}>
+                <Layout className="w-3.5 h-3.5" /> Administración
               </button>
               </>
             )}
@@ -2215,6 +2291,7 @@ export default function App() {
             {view === 'gallery' && renderGallery()}
             {view === 'lab' && renderLab()}
             {view === 'simon' && renderSimon()}
+            {view === 'admin' && renderAdminDashboard()}
             {view === 'suggestions' && renderSuggestions()}
             {view === 'contact-inbox' && renderContactInbox()}
             {view === 'time-challenge' && renderTimeChallenge()}
