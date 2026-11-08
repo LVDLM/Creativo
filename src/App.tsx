@@ -537,7 +537,6 @@ export default function App() {
     const isMinimal = theme === 'minimal';
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
-        {isMinimal && renderMinimalNav()}
         <TimeChallenge 
           challenges={CHALLENGES}
           user={user}
@@ -643,7 +642,6 @@ export default function App() {
     return (
       <div className="bg-[#F7F4EE] min-h-screen text-[#1C1510] font-body">
         {/* 5.1 Navegación del Hero */}
-        {renderMinimalNav()}
 
         <div className="max-w-6xl mx-auto px-6">
           {/* 5.2 Encabezado supratítulo */}
@@ -888,7 +886,6 @@ export default function App() {
     if (theme === 'minimal') {
       return (
         <div className="bg-[#F7F4EE] min-h-screen font-body text-[#1C1510]">
-          {renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-16">
             <button 
               onClick={() => {
@@ -1191,7 +1188,6 @@ export default function App() {
 
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
-        {isMinimal && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-16">
           {/* Cabecera de la sección */}
           <div className="mb-10">
@@ -1519,7 +1515,6 @@ export default function App() {
     if (activeLabTool === 'microstory') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          {isMinimal && renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
@@ -1559,7 +1554,6 @@ export default function App() {
     if (activeLabTool === 'weatheraction') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          {isMinimal && renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
@@ -1599,7 +1593,6 @@ export default function App() {
     if (activeLabTool === 'surrealdialog') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          {isMinimal && renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
@@ -1639,7 +1632,6 @@ export default function App() {
     if (activeLabTool === 'poetrysays') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          {isMinimal && renderMinimalNav()}
           <div className="max-w-6xl mx-auto px-6 py-12">
             <button 
               onClick={() => {
@@ -1678,7 +1670,6 @@ export default function App() {
 
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-        {isMinimal && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="text-center mb-16">
             <h2 className={`${isMinimal ? 'font-editorial text-[42px] md:text-[64px] leading-[1.05] tracking-[-0.02em]' : 'text-5xl md:text-7xl font-bold'} mb-4 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>
@@ -1792,7 +1783,6 @@ export default function App() {
 
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
-        {isMinimal && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="text-center mb-16">
             <h2 className={`${isMinimal ? 'font-editorial text-[42px] md:text-[64px] leading-[1.05] tracking-[-0.02em]' : 'text-5xl md:text-7xl font-bold'} mb-4 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>
@@ -1906,7 +1896,6 @@ export default function App() {
 
     return (
       <div className={`min-h-screen ${theme === 'minimal' ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
-        {theme === 'minimal' && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="mb-10">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9A8062] mb-3">Espacio privado</p>
@@ -1960,7 +1949,6 @@ export default function App() {
     const unreadCount = contactMessages.filter(message => !message.isRead).length;
     return (
       <div className={`min-h-screen ${theme === 'minimal' ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
-        {theme === 'minimal' && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="mb-8">
             <button onClick={() => setView('admin')} className="mb-4 text-[#5A4A3A] hover:text-[#1C1510] flex items-center gap-2 font-bold text-[11px] uppercase tracking-widest">
@@ -2024,7 +2012,6 @@ export default function App() {
 
     return (
       <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] text-[#1C1510] font-body' : ''}`}>
-        {isMinimal && renderMinimalNav()}
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
             <div>
@@ -2227,6 +2214,8 @@ export default function App() {
         </nav>
       )}
 
+      {theme === 'minimal' && renderMinimalNav()}
+
       <main className="flex-grow">
         <AnimatePresence mode="wait">
           <motion.div
@@ -2247,7 +2236,7 @@ export default function App() {
             {view === 'time-challenge' && renderTimeChallenge()}
             {view === 'privacy' && <PrivacyPolicy onBack={() => setView('home')} theme={theme} />}
             {view === 'terms' && <TermsAndConditions onBack={() => setView('home')} theme={theme} />}
-            {view === 'contact' && <>{theme === 'minimal' && renderMinimalNav()}<ContactForm onBack={() => setView(previousView)} theme={theme} user={user} initialType={contactFormType} /></>}
+            {view === 'contact' && <ContactForm onBack={() => setView(previousView)} theme={theme} user={user} initialType={contactFormType} />}
           </motion.div>
         </AnimatePresence>
       </main>
