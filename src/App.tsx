@@ -103,7 +103,7 @@ export default function App() {
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [pontePrompt, setPontePrompt] = useState<any>(null);
   const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'contact-inbox' | 'admin' | 'privacy' | 'terms' | 'contact' | 'time-challenge'>('home');
-  const [previousView, setPreviousView] = useState<'home' | 'lab' | 'simon' | 'gallery'>('home');
+  const [previousView, setPreviousView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'contact-inbox' | 'admin' | 'privacy' | 'terms' | 'time-challenge'>('home');
   const [publications, setPublications] = useState<Publication[]>([]);
   const [pendingPublications, setPendingPublications] = useState<Publication[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -2256,7 +2256,7 @@ export default function App() {
             <div className="flex gap-8 text-sm opacity-40 sans">
               <button onClick={() => setView('privacy')} className="hover:opacity-100 transition-opacity">Privacidad</button>
               <button onClick={() => setView('terms')} className="hover:opacity-100 transition-opacity">Términos</button>
-              <button onClick={() => { setPreviousView(view === 'lab' ? 'lab' : 'home'); setContactFormType('contact'); setView('contact'); }} className="hover:opacity-100 transition-opacity">Ideas y contacto</button>
+              <button onClick={() => { setPreviousView(view === 'contact' ? 'home' : view); setContactFormType('contact'); setView('contact'); }} className="hover:opacity-100 transition-opacity">Ideas y contacto</button>
             </div>
             <div className="text-center md:text-right space-y-1.5">
               <p className="text-xs opacity-30 sans">© 2026 Ponte Creativo. Todos los derechos reservados.</p>
