@@ -108,9 +108,7 @@ export default function App() {
   const [pendingPublications, setPendingPublications] = useState<Publication[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
-  const [suggestionText, setSuggestionText] = useState('');
-  const [isSendingSuggestion, setIsSendingSuggestion] = useState(false);
-  const [suggestionSuccess, setSuggestionSuccess] = useState(false);
+  const [contactFormType, setContactFormType] = useState<'suggestion' | 'contact'>('contact');
   const [suggestionsFilter, setSuggestionsFilter] = useState<'all' | 'starred'>('all');
   const [userLikes, setUserLikes] = useState<Record<string, boolean>>({});
   const [writingContent, setWritingContent] = useState('');
@@ -395,28 +393,6 @@ export default function App() {
     }
   };
 
-  const handleSendSuggestion = async (content: string) => {
-    if (!content.trim()) return;
-    setIsSendingSuggestion(true);
-    try {
-      const path = 'suggestions';
-      await addDoc(collection(db, path), {
-        content: content.trim(),
-        authorName: (user ? user.displayName : null) || 'Invitado',
-        authorId: user ? user.uid : 'guest',
-        authorEmail: user?.email || null,
-        createdAt: serverTimestamp(),
-        isStarred: false
-      });
-      setSuggestionSuccess(true);
-      setSuggestionText('');
-      setTimeout(() => setSuggestionSuccess(false), 5000);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'suggestions');
-    } finally {
-      setIsSendingSuggestion(false);
-    }
-  };
 
   const handleToggleContactRead = async (id: string, isRead: boolean) => {
     try {
@@ -1775,60 +1751,20 @@ export default function App() {
               </button>
             </motion.div>
 
-            <div className={`md:col-span-2 p-8 md:p-12 ${
-              isMinimal 
-                ? 'bg-white border border-[#C8C2B4] rounded-[2px]' 
-                : 'card bg-indigo-600/5 border-dashed border-2 border-indigo-200'
-            }`}>
+            <div className={`md:col-span-2 p-8 md:p-12 ${isMinimal ? 'bg-white border border-[#C8C2B4] rounded-[2px]' : 'card bg-indigo-600/5 border-dashed border-2 border-indigo-200'}`}>
               <div className="max-w-2xl mx-auto flex flex-col items-center text-center">
                 <h4 className={`text-2xl font-bold mb-3 ${isMinimal ? 'font-editorial text-[#1C1510]' : ''}`}>
-                  ¿Tienes una herramienta propia? ¿Alguna idea para incentivar la creatividad?
+                  ¿Tienes una idea para Ponte Creativo?
                 </h4>
                 <p className={`mb-6 text-sm leading-relaxed ${isMinimal ? 'text-[#5A5040]' : 'opacity-60'}`}>
-                  Podemos intentar incorporarla aquí mismo para centralizar tu flujo creativo. Cuentanosla y veremos qué se puede hacer.
+                  Comparte una propuesta para nuevas actividades, juegos o herramientas, o envíanos un mensaje privado.
                 </p>
-
-                {suggestionSuccess ? (
-                  <div className="w-full p-4 bg-emerald-50 border border-emerald-200 rounded-[2px] text-emerald-800 text-sm font-body flex items-center justify-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    ¡Muchas gracias! Tu sugerencia se ha guardado en nuestro buzón privado para revisión.
-                  </div>
-                ) : (
-                  <form 
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleSendSuggestion(suggestionText);
-                    }}
-                    className="w-full space-y-4 text-left"
-                  >
-                    <textarea
-                      value={suggestionText}
-                      onChange={(e) => setSuggestionText(e.target.value)}
-                      placeholder="Escribe tu propuesta o la idea que te gustaría ver integrada..."
-                      rows={4}
-                      required
-                      className="w-full p-4 border border-[#C8C2B4] focus:border-[#1C1510] focus:ring-0 rounded-[2px] font-body text-sm text-[#1C1510] bg-white placeholder-[#8F8E88] resize-y"
-                    />
-                    
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                      <span className="text-[11px] text-[#5A4A3A] font-body">
-                        {user ? (
-                          <>Enviando como <strong>{user.displayName || user.email}</strong></>
-                        ) : (
-                          <>Enviando como <strong>Invitado</strong></>
-                        )}
-                      </span>
-                      <button
-                        type="submit"
-                        disabled={isSendingSuggestion || !suggestionText.trim()}
-                        className="w-full sm:w-auto bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em] hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        {isSendingSuggestion ? 'Enviando...' : 'Enviar'}
-                      </button>
-                    </div>
-                  </form>
-                )}
+                <button
+                  onClick={() => { setPreviousView('lab'); setContactFormType('suggestion'); setView('contact'); }}
+                  className="bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em] hover:opacity-90 transition-all"
+                >
+                  <Send className="w-3.5 h-3.5 inline mr-2" /> Enviar idea o mensaje
+                </button>
               </div>
             </div>
           </div>
@@ -2298,7 +2234,7 @@ export default function App() {
             {view === 'time-challenge' && renderTimeChallenge()}
             {view === 'privacy' && <PrivacyPolicy onBack={() => setView('home')} theme={theme} />}
             {view === 'terms' && <TermsAndConditions onBack={() => setView('home')} theme={theme} />}
-            {view === 'contact' && <ContactForm onBack={() => setView('home')} theme={theme} user={user} />}
+            {view === 'contact' && <ContactForm onBack={() => setView(previousView)} theme={theme} user={user} initialType={contactFormType} />}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -2320,7 +2256,7 @@ export default function App() {
             <div className="flex gap-8 text-sm opacity-40 sans">
               <button onClick={() => setView('privacy')} className="hover:opacity-100 transition-opacity">Privacidad</button>
               <button onClick={() => setView('terms')} className="hover:opacity-100 transition-opacity">Términos</button>
-              <button onClick={() => setView('contact')} className="hover:opacity-100 transition-opacity">Contacto</button>
+              <button onClick={() => { setPreviousView(view === 'lab' ? 'lab' : 'home'); setContactFormType('contact'); setView('contact'); }} className="hover:opacity-100 transition-opacity">Ideas y contacto</button>
             </div>
             <div className="text-center md:text-right space-y-1.5">
               <p className="text-xs opacity-30 sans">© 2026 Ponte Creativo. Todos los derechos reservados.</p>
