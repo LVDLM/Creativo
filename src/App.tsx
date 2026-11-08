@@ -469,6 +469,7 @@ export default function App() {
   };
 
   const renderMinimalNav = () => (
+    <div className="w-full bg-[#F7F4EE]">
     <nav className="max-w-6xl mx-auto px-6 pt-8 pb-3 flex justify-between items-end border-b border-[#C8C2B4] mb-10">
       <div 
         className="font-editorial font-bold text-[15px] cursor-pointer"
@@ -529,6 +530,7 @@ export default function App() {
         )}
       </div>
     </nav>
+    </div>
   );
 
   const renderTimeChallenge = () => {
