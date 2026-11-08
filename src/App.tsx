@@ -69,7 +69,8 @@ import {
   Star,
   Heart,
   X,
-  XCircle
+  XCircle,
+  Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
