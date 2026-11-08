@@ -102,7 +102,16 @@ export default function App() {
   const [theme, setTheme] = useState<'organic' | 'modern' | 'minimal'>('minimal');
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [pontePrompt, setPontePrompt] = useState<any>(null);
-  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'contact-inbox' | 'admin' | 'privacy' | 'terms' | 'contact' | 'time-challenge'>('home');
+  const [view, setView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'contact-inbox' | 'admin' | 'privacy' | 'terms' | 'contact' | 'time-challenge'>(() => {
+    const routes: Record<string, any> = {
+      '#retos': 'home',
+      '#galeria': 'gallery',
+      '#laboratorio': 'lab',
+      '#simon-dice': 'simon',
+      '#ideas-contacto': 'contact'
+    };
+    return routes[window.location.hash] || 'home';
+  });
   const [previousView, setPreviousView] = useState<'home' | 'challenge' | 'gallery' | 'lab' | 'simon' | 'suggestions' | 'contact-inbox' | 'admin' | 'privacy' | 'terms' | 'time-challenge'>('home');
   const [publications, setPublications] = useState<Publication[]>([]);
   const [pendingPublications, setPendingPublications] = useState<Publication[]>([]);
@@ -195,6 +204,35 @@ export default function App() {
       setIsAuthReady(true);
     });
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const routeByView: Record<string, string> = {
+      home: '#retos',
+      gallery: '#galeria',
+      lab: '#laboratorio',
+      simon: '#simon-dice',
+      contact: '#ideas-contacto'
+    };
+    const hash = routeByView[view];
+    if (hash && window.location.hash !== hash) {
+      window.history.replaceState(null, '', hash);
+    } else if (!hash && window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }, [view]);
+
+  useEffect(() => {
+    const viewByRoute: Record<string, any> = {
+      '#retos': 'home',
+      '#galeria': 'gallery',
+      '#laboratorio': 'lab',
+      '#simon-dice': 'simon',
+      '#ideas-contacto': 'contact'
+    };
+    const handleRouteChange = () => setView(viewByRoute[window.location.hash] || 'home');
+    window.addEventListener('hashchange', handleRouteChange);
+    return () => window.removeEventListener('hashchange', handleRouteChange);
   }, []);
 
   useEffect(() => {
@@ -1184,34 +1222,7 @@ export default function App() {
               </button>
             ))}
 
-            {isAdmin && (
-              <>
-                <button
-                  onClick={() => setShowModeration(!showModeration)}
-                  className={`px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
-                    showModeration
-                      ? 'bg-amber-600 text-white shadow-lg shadow-amber-100'
-                      : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                  }`}
-                >
-                  <AlertCircle className="w-3 h-3" />
-                  Moderación {pendingPublications.length > 0 && `(${pendingPublications.length})`}
-                </button>
-                <button
-                  onClick={() => setView('contact-inbox')}
-                  className="px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
-                >
-                  <Mail className="w-3 h-3 inline mr-1" /> Mensajes {contactMessages.filter(message => !message.isRead).length > 0 && `(${contactMessages.filter(message => !message.isRead).length})`}
-                </button>
-                <button
-                  onClick={() => setView('suggestions')}
-                  className="px-4 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
-                >
-                  <Star className="w-3 h-3 text-amber-600 fill-amber-500" />
-                  Sugerencias {suggestions.length > 0 && `(${suggestions.length})`}
-                </button>
-              </>
-            )}
+
 
             {authorFilter && (
               <div className="flex items-center gap-2 ml-auto bg-[#1C1510] text-[#F7F4EE] px-3 py-1 rounded-[2px] text-[11px] font-body font-bold uppercase tracking-widest animate-in fade-in slide-in-from-right-4">
