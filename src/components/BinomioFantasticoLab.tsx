@@ -63,6 +63,7 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
   const [hasValidated, setHasValidated] = useState(false);
   const [validationPassed, setValidationPassed] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
+  const [replacementNotice, setReplacementNotice] = useState('');
   const intervalRef = useRef<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
 
@@ -101,6 +102,7 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
     if (isRolling) return;
     clearRollTimers();
     invalidateValidation();
+    setReplacementNotice('');
     setIsRolling(true);
 
     const nextRollingWords: WordPair = [...pair];
@@ -142,6 +144,11 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
         item.word !== other.word &&
         item.category !== other.category
     );
+    if (options.length === 0) {
+      setReplacementNotice(`No hay más alternativas disponibles para «${pair[index].word}» en esta pareja. Prueba a cambiar «${other.word}» y vuelve a intentarlo.`);
+      return;
+    }
+    setReplacementNotice('');
     const replacement = randomItem(options);
     const nextPair: WordPair = [...pair];
     nextPair[index] = replacement;
@@ -248,7 +255,7 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
           <span className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${isMinimal ? 'bg-[#EDE8DF]' : 'bg-indigo-50'}`}>1</span>
           <div>
             <h3 id="binomio-pair-heading" className="font-bold text-lg">Tu pareja de palabras</h3>
-            <p className="text-xs opacity-60">Las dos palabras proceden de lemas seleccionados del Diccionario de la lengua española.</p>
+            <p className="text-[11pt] leading-relaxed opacity-70">Las dos palabras proceden de lemas seleccionados del Diccionario de la lengua española.</p>
           </div>
         </div>
 
@@ -257,8 +264,14 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
           {renderWordCard(pair[1], 1)}
         </div>
 
+        {replacementNotice && (
+          <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950" role="status" aria-live="polite">
+            {replacementNotice}
+          </p>
+        )}
+
         <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs opacity-60 text-center sm:text-left">
+          <p className="text-[11pt] leading-relaxed opacity-70 text-center sm:text-left">
             ¿No te inspira una de ellas? Pulsa esa palabra para cambiar solo esa. También puedes probar con una pareja completamente nueva.
           </p>
           <button
@@ -278,7 +291,7 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
           <span className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${isMinimal ? 'bg-[#EDE8DF]' : 'bg-indigo-50'}`}>2</span>
           <div>
             <h3 id="binomio-write-heading" className="font-bold text-lg">Construye tu historia</h3>
-            <p className="text-xs opacity-60">No hace falta explicar la relación: deja que las dos palabras provoquen algo inesperado.</p>
+            <p className="text-[11pt] leading-relaxed opacity-70">No hace falta explicar la relación: deja que las dos palabras provoquen algo inesperado.</p>
           </div>
         </div>
 
