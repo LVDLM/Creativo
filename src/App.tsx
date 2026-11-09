@@ -1358,7 +1358,7 @@ export default function App() {
                     <div className="flex items-center gap-2 mb-4">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
                       <span className="text-[10px] uppercase tracking-widest text-amber-700 font-bold">
-                        {pub.submissionType === 'hypothesis' ? 'Nueva hipótesis' : pub.submissionType === 'story' ? 'Texto para publicar' : 'Pendiente'} · {challengeTitle}
+                        {pub.submissionType === 'hypothesis' ? 'Nueva hipótesis' : pub.submissionType === 'story' ? `Texto para publicar · ${challengeTitle}` : `Pendiente: ${challengeTitle}`}
                       </span>
                     </div>
 
