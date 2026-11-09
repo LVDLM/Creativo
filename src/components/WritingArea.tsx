@@ -18,6 +18,7 @@ interface WritingAreaProps {
   children?: React.ReactNode;
   textareaLabel?: string;
   canPublish?: boolean;
+  afterTextarea?: React.ReactNode;
 }
 
 export const WritingArea: React.FC<WritingAreaProps> = ({
@@ -35,7 +36,8 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
   maxWidth,
   children,
   textareaLabel,
-  canPublish = true
+  canPublish = true,
+  afterTextarea
 }) => {
   const isMinimal = theme === 'minimal';
 
@@ -80,6 +82,7 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
             }`}
           />
         </div>
+        {afterTextarea}
         <div className="flex flex-col md:flex-row justify-end gap-4 items-center">
           {!user && (
             <button 
