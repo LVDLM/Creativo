@@ -44,7 +44,6 @@ export const LipogramLab: React.FC<LipogramLabProps> = ({
   const [validationPassed, setValidationPassed] = useState(false);
   const isMinimal = theme === 'minimal';
   const isModern = theme === 'modern';
-  const isValidLetter = SPANISH_ALPHABET.includes(selectedLetter);
   const occurrences = useMemo(
     () => countLetter(writingContent, selectedLetter),
     [writingContent, selectedLetter]
@@ -150,7 +149,7 @@ export const LipogramLab: React.FC<LipogramLabProps> = ({
             <Dice5 className="w-4 h-4" /> Elegir al azar
           </button>
         </div>
-        <p className="mt-3 text-xs opacity-60">La comprobación no distingue entre mayúsculas y minúsculas. Las vocales con tilde cuentan como la misma letra (por ejemplo, A también detecta á).</p>
+        <p className="mt-3 text-xs opacity-60">La comprobación no distingue entre mayúsculas y minúsculas. Las vocales con tilde cuentan como la misma letra (por ejemplo, A también detecta á). La Ñ se considera una letra distinta de la N.</p>
       </section>
 
       <section className={`p-5 md:p-7 border ${isMinimal ? 'bg-white border-[#C8C2B4] rounded-[2px]' : 'bg-white border-stone-200 rounded-2xl'}`} aria-labelledby="lipogram-write-heading">
