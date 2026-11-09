@@ -265,8 +265,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [view, activeChallenge]);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [view, activeChallenge, activeLabTool]);
 
   useEffect(() => {
     if (!user) {
@@ -1866,20 +1866,6 @@ export default function App() {
               </button>
             </motion.div>
 
-            <motion.div 
-              whileHover={{ y: -5 }}
-              className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] opacity-50' : 'card opacity-50'} p-10 flex flex-col items-center text-center group transition-all`}
-            >
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
-                <Globe className="w-10 h-10" />
-              </div>
-              <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>Generador de Mundos</h3>
-              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Crea ecosistemas, mitologías y geografías únicas para tus historias de fantasía o ciencia ficción.</p>
-              <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em] opacity-50 cursor-not-allowed' : 'olive-button opacity-50 cursor-not-allowed'}`}>
-                Próximamente
-              </button>
-            </motion.div>
-
             <motion.div
               whileHover={{ y: -5 }}
               onClick={() => setActiveLabTool('binomiofantastico')}
@@ -1892,6 +1878,20 @@ export default function App() {
               <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Une dos palabras inesperadas y conviértelas en una historia. Puedes cambiar cada palabra o generar una pareja nueva.</p>
               <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
                 Abrir Herramienta
+              </button>
+            </motion.div>
+
+            <motion.div 
+              whileHover={{ y: -5 }}
+              className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] opacity-50' : 'card opacity-50'} p-10 flex flex-col items-center text-center group transition-all`}
+            >
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+                <Globe className="w-10 h-10" />
+              </div>
+              <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>Generador de Mundos</h3>
+              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Crea ecosistemas, mitologías y geografías únicas para tus historias de fantasía o ciencia ficción.</p>
+              <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em] opacity-50 cursor-not-allowed' : 'olive-button opacity-50 cursor-not-allowed'}`}>
+                Próximamente
               </button>
             </motion.div>
 
