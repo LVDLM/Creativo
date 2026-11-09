@@ -23,6 +23,7 @@ export interface Publication {
   likesCount?: number;
   status?: 'pending' | 'approved' | 'rejected';
   isGuest?: boolean;
+  submissionType?: 'story' | 'hypothesis';
 }
 
 export interface ContactMessage {
