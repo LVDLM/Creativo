@@ -90,7 +90,7 @@ const randomTrigger = (kind?: TriggerKind): CreativeTrigger => {
 };
 
 const countWords = (text: string) =>
-  text.trim() ? text.trim().split(/\\s+/).filter(Boolean).length : 0;
+  text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
 
 export const ErrorCreativeLab: React.FC<ErrorCreativeLabProps> = ({
   theme,
@@ -149,7 +149,7 @@ export const ErrorCreativeLab: React.FC<ErrorCreativeLabProps> = ({
       `Nueva interpretación: ${trigger.twist}`,
       '',
       writingContent.trim()
-    ].join('\\n');
+    ].join('\n');
     onPublish(fullText);
   };
 
