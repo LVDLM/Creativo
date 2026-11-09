@@ -22,6 +22,7 @@ import { MicroStoryLab } from './components/MicroStoryLab';
 import { WeatherActionLab } from './components/WeatherActionLab';
 import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
 import { PoetryLab } from './components/PoetryLab';
+import { ErrorCreativeLab } from './components/ErrorCreativeLab';
 import { WritingArea } from './components/WritingArea';
 import { TimeChallenge } from './components/TimeChallenge';
 import { ExamplesCarousel } from './components/ExamplesCarousel';
@@ -193,6 +194,19 @@ export default function App() {
       isLab: true,
       labId: 'poetrysays',
       tags: ['Laboratorio', 'Poesía', '10 min']
+    },
+    {
+      id: 'lab-error-creativo',
+      title: 'El error creativo',
+      description: 'Convierte una errata, un malentendido o una interpretación inesperada en el comienzo de una microhistoria.',
+      difficulty: 'Fácil',
+      duration: '5–10 min',
+      category: 'Laboratorio',
+      icon: 'Sparkles',
+      example: 'Una palabra mal escrita abre la puerta a un mundo que no debería existir.',
+      isLab: true,
+      labId: 'errorcreativo',
+      tags: ['Laboratorio', 'Palabras', 'Microhistorias']
     }
   ];
 
@@ -1149,7 +1163,7 @@ export default function App() {
   };
 
   const renderGallery = () => {
-    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says'];
+    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says', 'lab-error-creativo'];
     const isMinimal = theme === 'minimal';
     
     // Determine type for filtering
@@ -1631,6 +1645,45 @@ export default function App() {
       );
     }
 
+    if (activeLabTool === 'errorcreativo') {
+      return (
+        <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          <div className="max-w-6xl mx-auto px-6 py-12">
+            <button
+              onClick={() => {
+                setActiveLabTool(null);
+                setWritingContent('');
+              }}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
+            </button>
+            <ErrorCreativeLab
+              theme={theme}
+              user={user}
+              writingContent={writingContent}
+              setWritingContent={setWritingContent}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
+              onPublish={(content) => handlePublish('lab-error-creativo', content)}
+              isPublishing={isPublishing}
+              publishSuccess={publishSuccess}
+              onLogin={handleLogin}
+            />
+            <div className="max-w-4xl mx-auto">
+              <ExamplesCarousel
+                challengeId="lab-error-creativo"
+                publications={publications}
+                theme={theme}
+                showExamples={showExamples}
+                setShowExamples={setShowExamples}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (activeLabTool === 'poetrysays') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
@@ -1738,6 +1791,21 @@ export default function App() {
               </div>
               <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>En poesía se dice...</h3>
               <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Toma una palabra o frase de tu día a día y saca toda tu literatura para decir "lo mismo" con Poesía.</p>
+              <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
+                Abrir Herramienta
+              </button>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -5 }}
+              onClick={() => setActiveLabTool('errorcreativo')}
+              className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] hover:border-[#8F8E88]' : 'card'} p-10 flex flex-col items-center text-center group cursor-pointer transition-all`}
+            >
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+                <Sparkles className="w-10 h-10" />
+              </div>
+              <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>El error creativo</h3>
+              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Convierte una errata, un malentendido o una lectura inesperada en una historia.</p>
               <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
                 Abrir Herramienta
               </button>
