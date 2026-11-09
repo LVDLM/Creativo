@@ -432,7 +432,7 @@ export default function App() {
       setPublishSuccess(true);
       setTimeout(() => {
         setPublishSuccess(false);
-        if (!isGuest) setView(submissionType === 'hypothesis' ? 'lab' : 'gallery');
+        if (!isGuest) setView(submissionType ? 'lab' : 'gallery');
         setActiveChallenge(null);
         setActiveLabTool(null);
         setWritingContent('');
