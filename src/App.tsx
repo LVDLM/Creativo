@@ -23,6 +23,7 @@ import { WeatherActionLab } from './components/WeatherActionLab';
 import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
 import { PoetryLab } from './components/PoetryLab';
 import { LipogramLab } from './components/LipogramLab';
+import { BinomioFantasticoLab } from './components/BinomioFantasticoLab';
 import { WritingArea } from './components/WritingArea';
 import { TimeChallenge } from './components/TimeChallenge';
 import { ExamplesCarousel } from './components/ExamplesCarousel';
@@ -209,6 +210,20 @@ export default function App() {
       tags: ['Laboratorio', 'Letras', 'Restricciones']
     }
   ];
+
+  LAB_ACTIVITIES.push({
+    id: 'lab-binomio-fantastico',
+    title: 'El binomio fantástico',
+    description: 'Construye una historia a partir de dos palabras inesperadas. Cámbialas al azar hasta encontrar una combinación que te inspire.',
+    difficulty: 'Fácil',
+    duration: '10–15 min',
+    category: 'Laboratorio',
+    icon: 'Shuffle',
+    example: 'Un gusano y un radiador se encuentran una noche de invierno.',
+    isLab: true,
+    labId: 'binomiofantastico',
+    tags: ['Laboratorio', 'Palabras', 'Narrativa']
+  });
 
   const ALL_ACTIVITIES = [...LAB_ACTIVITIES, ...CHALLENGES];
 
@@ -1163,7 +1178,7 @@ export default function App() {
   };
 
   const renderGallery = () => {
-    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says', 'lab-lipograma'];
+    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says', 'lab-lipograma', 'lab-binomio-fantastico'];
     const isMinimal = theme === 'minimal';
     
     // Determine type for filtering
@@ -1286,7 +1301,8 @@ export default function App() {
                   'lab-micro-story': 'Microhistorias',
                   'lab-weather-action': 'Tiempo y Acciones',
                   'lab-surreal-dialog': 'Diálogos Surrealistas',
-                  'lab-poetry-says': 'En poesía se dice...'
+                  'lab-poetry-says': 'En poesía se dice...',
+                  'lab-binomio-fantastico': 'El binomio fantástico'
                 };
                 const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
                 const dotColor = getCategoryColor(pub.challengeId);
@@ -1527,6 +1543,45 @@ export default function App() {
 
   const renderLab = () => {
     const isMinimal = theme === 'minimal';
+
+    if (activeLabTool === 'binomiofantastico') {
+      return (
+        <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          <div className="max-w-6xl mx-auto px-6 py-12">
+            <button
+              onClick={() => {
+                setActiveLabTool(null);
+                setWritingContent('');
+              }}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
+            </button>
+            <BinomioFantasticoLab
+              theme={theme}
+              user={user}
+              writingContent={writingContent}
+              setWritingContent={setWritingContent}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
+              onPublish={(content) => handlePublish('lab-binomio-fantastico', content)}
+              isPublishing={isPublishing}
+              publishSuccess={publishSuccess}
+              onLogin={handleLogin}
+            />
+            <div className="max-w-4xl mx-auto">
+              <ExamplesCarousel
+                challengeId="lab-binomio-fantastico"
+                publications={publications}
+                theme={theme}
+                showExamples={showExamples}
+                setShowExamples={setShowExamples}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     if (activeLabTool === 'lipograma') {
       return (
@@ -1822,6 +1877,21 @@ export default function App() {
               <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Crea ecosistemas, mitologías y geografías únicas para tus historias de fantasía o ciencia ficción.</p>
               <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em] opacity-50 cursor-not-allowed' : 'olive-button opacity-50 cursor-not-allowed'}`}>
                 Próximamente
+              </button>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -5 }}
+              onClick={() => setActiveLabTool('binomiofantastico')}
+              className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] hover:border-[#8F8E88]' : 'card'} p-10 flex flex-col items-center text-center group cursor-pointer transition-all`}
+            >
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+                <Shuffle className="w-10 h-10" />
+              </div>
+              <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>El binomio fantástico</h3>
+              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Une dos palabras inesperadas y conviértelas en una historia. Puedes cambiar cada palabra o generar una pareja nueva.</p>
+              <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
+                Abrir Herramienta
               </button>
             </motion.div>
 
