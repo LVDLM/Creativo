@@ -432,7 +432,7 @@ export default function App() {
       setPublishSuccess(true);
       setTimeout(() => {
         setPublishSuccess(false);
-        if (!isGuest) setView('gallery');
+        if (!isGuest) setView(submissionType === 'hypothesis' ? 'lab' : 'gallery');
         setActiveChallenge(null);
         setActiveLabTool(null);
         setWritingContent('');
@@ -1952,6 +1952,21 @@ export default function App() {
               </div>
               <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>El binomio fantástico</h3>
               <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Une dos palabras inesperadas y conviértelas en una historia. Puedes cambiar cada palabra o generar una pareja nueva.</p>
+              <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
+                Abrir Herramienta
+              </button>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -5 }}
+              onClick={() => setActiveLabTool('hipotesisfantastica')}
+              className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] hover:border-[#8F8E88]' : 'card'} p-10 flex flex-col items-center text-center group cursor-pointer transition-all`}
+            >
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+                <Sparkles className="w-10 h-10" />
+              </div>
+              <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>La hipótesis fantástica</h3>
+              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Responde a una pregunta inesperada o propón una hipótesis para inspirar a otros escritores.</p>
               <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
                 Abrir Herramienta
               </button>
