@@ -63,8 +63,8 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
   const [hasValidated, setHasValidated] = useState(false);
   const [validationPassed, setValidationPassed] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<number | null>(null);
+  const timeoutRef = useRef<number | null>(null);
 
   const isMinimal = theme === 'minimal';
   const isModern = theme === 'modern';
@@ -223,7 +223,7 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
           Consultar en el DLE <ExternalLink className="w-3 h-3" />
         </a>
         <span className="mt-4 text-[10px] opacity-40">
-          {isRolling && changedIndexesPlaceholder(index) ? 'Buscando palabra…' : 'Pulsa la palabra para cambiarla'}
+          {isRolling ? 'La ruleta está girando…' : 'Pulsa la palabra para cambiarla'}
         </span>
       </article>
     );
@@ -335,6 +335,3 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
   );
 };
 
-function changedIndexesPlaceholder(_index: number) {
-  return true;
-}
