@@ -72,7 +72,8 @@ service cloud.firestore {
              data.authorName is string && data.authorName.size() > 0 && data.authorName.size() < 100 &&
              data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
              data.createdAt == request.time &&
-             data.isModerated == true &&
+             data.isModerated == (!('submissionType' in data)) &&
+             (!('submissionType' in data) || (data.submissionType in ['story', 'hypothesis'] && data.challengeId == 'lab-hipotesis-fantastica')) &&
              data.status == 'pending' &&
              data.isGuest == false &&
              (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200)) &&
@@ -88,6 +89,7 @@ service cloud.firestore {
              data.createdAt == request.time &&
              data.isModerated == false &&
              data.isGuest == true &&
+             (!('submissionType' in data) || (data.submissionType in ['story', 'hypothesis'] && data.challengeId == 'lab-hipotesis-fantastica')) &&
              data.status == "pending" &&
              (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200));
     }
@@ -152,6 +154,18 @@ service cloud.firestore {
         request.resource.data.likesCount == resource.data.likesCount + 1 &&
         exists(/databases/$(database)/documents/likes/$(request.auth.uid + "_" + pubId))
       );
+    }
+
+    match /hypotheses/{hypothesisId} {
+      // El banco solo es visible cuando la hipótesis ha sido aprobada.
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['content', 'status', 'createdAt', 'createdBy', 'sourcePublicationId']) &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() > 0 &&
+        request.resource.data.content.size() < 300 &&
+        request.resource.data.status == 'approved';
+      allow update, delete: if isAdmin();
     }
 
     match /users/{userId} {
