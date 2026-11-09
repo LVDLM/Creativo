@@ -30,27 +30,14 @@ const createRandomPair = (): WordPair => {
   return [first, second];
 };
 
+// La comparación conserva las tildes y la ñ. Solo ignora mayúsculas
+// y minúsculas; la palabra debe aparecer con la misma grafía que el lema.
 const normalizeToken = (value: string) =>
-  value.normalize('NFD')
-    .replace(/ñ/g, '\u0001')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\u0001/g, 'ñ')
-    .toLocaleLowerCase('es');
-
-const acceptedForms = (lemma: string) => {
-  const normalized = normalizeToken(lemma);
-  const plural = normalized.endsWith('z')
-    ? normalized.slice(0, -1) + 'ces'
-    : /[aeiou]$/.test(normalized)
-      ? normalized + 's'
-      : normalized + 'es';
-  return [normalized, plural];
-};
+  value.normalize('NFC').toLocaleLowerCase('es');
 
 const containsWord = (text: string, lemma: string) => {
   const tokens = (text.match(/[\p{L}\p{M}]+/gu) || []).map(normalizeToken);
-  const forms = acceptedForms(lemma);
-  return forms.some((form) => tokens.includes(form));
+  return tokens.includes(normalizeToken(lemma));
 };
 
 export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
@@ -354,7 +341,7 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
       </section>
 
       <p className="mt-5 text-center text-[11px] leading-relaxed opacity-50">
-        El validador acepta la palabra en singular o plural y no distingue mayúsculas, minúsculas ni tildes. Cada enlace abre la entrada correspondiente del DLE.
+        El validador exige la misma palabra y la misma acentuación que propone el sistema. No distingue mayúsculas ni minúsculas. Cada enlace abre la entrada correspondiente del DLE.
       </p>
     </div>
   );
