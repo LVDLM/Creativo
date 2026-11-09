@@ -12,7 +12,8 @@ import {
   deleteDoc,
   updateDoc,
   setDoc,
-  increment
+  increment,
+  writeBatch
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db, loginWithGoogle, logout } from './firebase';
@@ -24,6 +25,7 @@ import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
 import { PoetryLab } from './components/PoetryLab';
 import { LipogramLab } from './components/LipogramLab';
 import { BinomioFantasticoLab } from './components/BinomioFantasticoLab';
+import { HipotesisFantasticaLab } from './components/HipotesisFantasticaLab';
 import { WritingArea } from './components/WritingArea';
 import { TimeChallenge } from './components/TimeChallenge';
 import { ExamplesCarousel } from './components/ExamplesCarousel';
@@ -225,6 +227,20 @@ export default function App() {
     tags: ['Laboratorio', 'Palabras', 'Narrativa']
   });
 
+  LAB_ACTIVITIES.push({
+    id: 'lab-hipotesis-fantastica',
+    title: 'La hipótesis fantástica',
+    description: 'Responde a una pregunta inesperada o propón una hipótesis para inspirar a otros escritores.',
+    difficulty: 'Fácil',
+    duration: '10–15 min',
+    category: 'Laboratorio',
+    icon: 'Sparkles',
+    example: '¿Qué pasaría si los recuerdos pudieran intercambiarse?',
+    isLab: true,
+    labId: 'hipotesisfantastica',
+    tags: ['Laboratorio', 'Imaginación', 'Narrativa']
+  });
+
   const ALL_ACTIVITIES = [...LAB_ACTIVITIES, ...CHALLENGES];
 
   useEffect(() => {
@@ -386,7 +402,7 @@ export default function App() {
     testConnection();
   }, []);
 
-  const handlePublish = async (labToolId?: string, contentOverride?: string) => {
+  const handlePublish = async (labToolId?: string, contentOverride?: string, submissionType?: 'story' | 'hypothesis', promptContext?: string) => {
     const finalContent = contentOverride || writingContent;
     if ((!activeChallenge && !labToolId) || !finalContent.trim()) return;
     setIsPublishing(true);
@@ -398,12 +414,13 @@ export default function App() {
       try {
         await addDoc(collection(db, path), {
           challengeId: labToolId || activeChallenge?.id,
-          subTitle: pontePrompt?.title || null,
+          subTitle: promptContext || pontePrompt?.title || null,
           authorId: user ? user.uid : 'guest',
           authorName: pseudonym.trim() || (user ? user.displayName : 'Invitado') || 'Invitado',
           content: finalContent,
           createdAt: serverTimestamp(),
-          isModerated: !isGuest, // Published directly if logged in, otherwise needs moderation
+          isModerated: submissionType ? false : !isGuest, // Las aportaciones de esta actividad siempre pasan por moderación
+          ...(submissionType ? { submissionType } : {}),
           status: 'pending',
           isGuest: isGuest,
           likesCount: 0
@@ -1112,7 +1129,27 @@ export default function App() {
   const handleApprove = async (pubId: string) => {
     if (!isAdmin) return;
     try {
-      await updateDoc(doc(db, 'publications', pubId), {
+      const publicationRef = doc(db, 'publications', pubId);
+      const publicationSnapshot = await getDocFromServer(publicationRef);
+      if (!publicationSnapshot.exists()) return;
+      const publication = publicationSnapshot.data();
+
+      if (publication.submissionType === 'hypothesis') {
+        // La propuesta se incorpora al banco y sale de la cola en una única operación atómica.
+        const batch = writeBatch(db);
+        batch.set(doc(db, 'hypotheses', pubId), {
+          content: publication.content,
+          status: 'approved',
+          createdAt: publication.createdAt || serverTimestamp(),
+          createdBy: publication.authorId,
+          sourcePublicationId: pubId
+        });
+        batch.delete(publicationRef);
+        await batch.commit();
+        return;
+      }
+
+      await updateDoc(publicationRef, {
         status: 'approved',
         isModerated: true
       });
@@ -1178,7 +1215,7 @@ export default function App() {
   };
 
   const renderGallery = () => {
-    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says', 'lab-lipograma', 'lab-binomio-fantastico'];
+    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says', 'lab-lipograma', 'lab-binomio-fantastico', 'lab-hipotesis-fantastica'];
     const isMinimal = theme === 'minimal';
     
     // Determine type for filtering
@@ -1302,7 +1339,8 @@ export default function App() {
                   'lab-weather-action': 'Tiempo y Acciones',
                   'lab-surreal-dialog': 'Diálogos Surrealistas',
                   'lab-poetry-says': 'En poesía se dice...',
-                  'lab-binomio-fantastico': 'El binomio fantástico'
+                  'lab-binomio-fantastico': 'El binomio fantástico',
+                  'lab-hipotesis-fantastica': 'La hipótesis fantástica'
                 };
                 const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
                 const dotColor = getCategoryColor(pub.challengeId);
@@ -1320,7 +1358,7 @@ export default function App() {
                     <div className="flex items-center gap-2 mb-4">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
                       <span className="text-[10px] uppercase tracking-widest text-amber-700 font-bold">
-                        Pendiente: {challengeTitle}
+                        {pub.submissionType === 'hypothesis' ? 'Nueva hipótesis' : 'Texto para publicar'} · {challengeTitle}
                       </span>
                     </div>
 
@@ -1543,6 +1581,44 @@ export default function App() {
 
   const renderLab = () => {
     const isMinimal = theme === 'minimal';
+
+    if (activeLabTool === 'hipotesisfantastica') {
+      return (
+        <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          <div className="max-w-6xl mx-auto px-6 py-12">
+            <button
+              onClick={() => {
+                setActiveLabTool(null);
+                setWritingContent('');
+              }}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
+            </button>
+            <HipotesisFantasticaLab
+              theme={theme}
+              user={user}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
+              onPublishStory={(content, hypothesis) => handlePublish('lab-hipotesis-fantastica', content, 'story', hypothesis)}
+              onSubmitHypothesis={(hypothesis) => handlePublish('lab-hipotesis-fantastica', hypothesis, 'hypothesis')}
+              isPublishing={isPublishing}
+              publishSuccess={publishSuccess}
+              onLogin={handleLogin}
+            />
+            <div className="max-w-4xl mx-auto">
+              <ExamplesCarousel
+                challengeId="lab-hipotesis-fantastica"
+                publications={publications}
+                theme={theme}
+                showExamples={showExamples}
+                setShowExamples={setShowExamples}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     if (activeLabTool === 'binomiofantastico') {
       return (
