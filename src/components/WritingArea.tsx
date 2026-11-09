@@ -100,7 +100,7 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
               isMinimal 
                 ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-body font-bold text-[12px] tracking-[0.06em]' 
                 : 'olive-button'
-            } flex items-center transition-all ${isPublishing ? 'opacity-50 cursor-not-allowed' : ''}`}
+            } flex items-center transition-all ${isPublishing || !writingContent.trim() || !canPublish ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {publishSuccess ? (
               <><CheckCircle2 className="w-4 h-4 mr-2" /> {user ? 'Publicado' : 'Enviado a moderación'}</>
