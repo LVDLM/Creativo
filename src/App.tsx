@@ -265,7 +265,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    window.scrollTo(0, 0);
   }, [view, activeChallenge, activeLabTool]);
 
   useEffect(() => {
