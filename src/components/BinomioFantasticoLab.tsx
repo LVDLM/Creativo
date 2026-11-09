@@ -103,23 +103,27 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
     clearRollTimers();
     invalidateValidation();
     setReplacementNotice('');
+
+    // La pareja elegida queda fijada inmediatamente. La ruleta solo modifica
+    // el texto provisional que se muestra mientras dura la animación.
+    setPair(targetPair);
+    const rollingPair: WordPair = [...pair];
+    setRollingWords(rollingPair);
     setIsRolling(true);
 
-    const nextRollingWords: WordPair = [...pair];
     intervalRef.current = window.setInterval(() => {
       changedIndexes.forEach((index) => {
-        const other = nextRollingWords[1 - index];
+        const other = rollingPair[1 - index];
         const options = FANTASTIC_WORDS.filter(
           (item) => item.word !== other.word && item.category !== other.category
         );
-        nextRollingWords[index] = randomItem(options);
+        if (options.length > 0) rollingPair[index] = randomItem(options);
       });
-      setRollingWords([...nextRollingWords] as WordPair);
-    }, 85);
+      setRollingWords([...rollingPair] as WordPair);
+    }, 110);
 
     timeoutRef.current = window.setTimeout(() => {
       clearRollTimers();
-      setPair(targetPair);
       setRollingWords(targetPair);
       setIsRolling(false);
     }, 1050);
@@ -139,13 +143,20 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
   const handleReplaceWord = (index: number) => {
     if (isRolling) return;
     const other = pair[1 - index];
-    const options = FANTASTIC_WORDS.filter(
+    let options = FANTASTIC_WORDS.filter(
       (item) => item.word !== pair[index].word &&
         item.word !== other.word &&
         item.category !== other.category
     );
+    // Respaldo defensivo: si en el futuro se reduce el banco y no quedan
+    // palabras de otra categoría, permitir cualquier lema distinto.
     if (options.length === 0) {
-      setReplacementNotice(`No hay más alternativas disponibles para «${pair[index].word}» en esta pareja. Prueba a cambiar «${other.word}» y vuelve a intentarlo.`);
+      options = FANTASTIC_WORDS.filter(
+        (item) => item.word !== pair[index].word && item.word !== other.word
+      );
+    }
+    if (options.length === 0) {
+      setReplacementNotice(`No hay más alternativas disponibles para «${pair[index].word}» en el banco de palabras. Prueba a generar otra pareja.`);
       return;
     }
     setReplacementNotice('');
@@ -205,7 +216,7 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
           aria-label={`Cambiar la palabra ${item.word} por otra aleatoria`}
           className="group min-h-[92px] w-full flex items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0F5C52] disabled:cursor-wait"
         >
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="sync">
             <motion.span
               key={displayedWord}
               initial={{ opacity: 0, rotateX: -75, y: 12, scale: 0.92 }}
@@ -221,7 +232,7 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
           </AnimatePresence>
         </button>
         <a
-          href={`https://dle.rae.es/${encodeURIComponent(item.word)}`}
+          href={`https://dle.rae.es/${encodeURIComponent(displayedWord)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-3 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider underline underline-offset-4 opacity-60 hover:opacity-100"
