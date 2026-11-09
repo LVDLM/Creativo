@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { User } from 'firebase/auth';
-import { AnimatePresence, motion } from 'motion/react';
 import { CheckCircle2, Dices, ExternalLink, RefreshCw, ShieldCheck, XCircle } from 'lucide-react';
 import { WritingArea } from './WritingArea';
 import { FANTASTIC_WORDS, FantasticWord } from '../data/fantasticWordBank';
@@ -19,6 +18,7 @@ interface BinomioFantasticoLabProps {
 }
 
 type WordPair = [FantasticWord, FantasticWord];
+type WordReels = [FantasticWord[], FantasticWord[]];
 
 const randomItem = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
 
@@ -58,7 +58,7 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
   onPublish, isPublishing, publishSuccess, onLogin
 }) => {
   const [pair, setPair] = useState<WordPair>(() => createRandomPair());
-  const [rollingWords, setRollingWords] = useState<WordPair>(() => pair);
+  const [rollingReels, setRollingReels] = useState<WordReels>(() => [[pair[0]], [pair[1]]]);
   const [isRolling, setIsRolling] = useState(false);
   const [hasValidated, setHasValidated] = useState(false);
   const [validationPassed, setValidationPassed] = useState(false);
@@ -104,29 +104,28 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
     invalidateValidation();
     setReplacementNotice('');
 
-    // La pareja elegida queda fijada inmediatamente. La ruleta solo modifica
-    // el texto provisional que se muestra mientras dura la animación.
-    setPair(targetPair);
-    const rollingPair: WordPair = [...pair];
-    setRollingWords(rollingPair);
-    setIsRolling(true);
+    // Construimos una tira vertical de palabras. La última es siempre el
+    // resultado definitivo; el movimiento queda recortado dentro de la tarjeta.
+    const reels: WordReels = [[pair[0]], [pair[1]]];
+    changedIndexes.forEach((index) => {
+      const other = targetPair[1 - index];
+      const options = FANTASTIC_WORDS.filter(
+        (item) => item.word !== other.word && item.category !== other.category
+      );
+      const sequence = Array.from({ length: 9 }, () => randomItem(options));
+      sequence.push(targetPair[index]);
+      reels[index] = sequence;
+    });
 
-    intervalRef.current = window.setInterval(() => {
-      changedIndexes.forEach((index) => {
-        const other = rollingPair[1 - index];
-        const options = FANTASTIC_WORDS.filter(
-          (item) => item.word !== other.word && item.category !== other.category
-        );
-        if (options.length > 0) rollingPair[index] = randomItem(options);
-      });
-      setRollingWords([...rollingPair] as WordPair);
-    }, 110);
+    setPair(targetPair);
+    setRollingReels(reels);
+    setIsRolling(true);
 
     timeoutRef.current = window.setTimeout(() => {
       clearRollTimers();
-      setRollingWords(targetPair);
+      setRollingReels([[targetPair[0]], [targetPair[1]]]);
       setIsRolling(false);
-    }, 1050);
+    }, 1120);
   };
 
   const handleNewPair = () => {
@@ -200,7 +199,8 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
   };
 
   const renderWordCard = (item: FantasticWord, index: number) => {
-    const displayedWord = isRolling ? rollingWords[index].word : item.word;
+    const reel = rollingReels[index];
+    const displayedWord = isRolling ? reel[reel.length - 1].word : item.word;
     return (
       <article
         key={index}
@@ -214,22 +214,23 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
           onClick={() => handleReplaceWord(index)}
           disabled={isRolling}
           aria-label={`Cambiar la palabra ${item.word} por otra aleatoria`}
-          className="group min-h-[92px] w-full flex items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0F5C52] disabled:cursor-wait"
+          className="group min-h-[92px] w-full flex items-center justify-center overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0F5C52] disabled:cursor-wait"
         >
-          <AnimatePresence mode="sync">
-            <motion.span
-              key={displayedWord}
-              initial={{ opacity: 0, rotateX: -75, y: 12, scale: 0.92 }}
-              animate={{ opacity: 1, rotateX: 0, y: 0, scale: 1 }}
-              exit={{ opacity: 0, rotateX: 75, y: -12, scale: 0.92 }}
-              transition={{ duration: 0.16, ease: 'easeOut' }}
-              className={`break-words font-editorial font-bold text-[clamp(1.8rem,5vw,3.2rem)] leading-tight ${isMinimal ? 'text-[#1C1510]' : isModern ? 'text-indigo-700' : 'text-stone-800'}`}
-              style={{ transformPerspective: 700 }}
-              aria-live="off"
+          <span className="block h-[88px] w-full overflow-hidden" aria-live="off">
+            <span
+              className={`flex w-full flex-col ${isRolling ? 'transition-transform duration-[1100ms] ease-[cubic-bezier(0.16,1,0.3,1)]' : ''}`}
+              style={{ transform: `translate3d(0, -${isRolling ? (reel.length - 1) * 88 : 0}px, 0)` }}
             >
-              {displayedWord}
-            </motion.span>
-          </AnimatePresence>
+              {reel.map((word, reelIndex) => (
+                <span
+                  key={`${word.word}-${reelIndex}`}
+                  className={`flex h-[88px] w-full shrink-0 items-center justify-center break-words px-2 font-editorial font-bold text-[clamp(1.8rem,5vw,3.2rem)] leading-tight ${isMinimal ? 'text-[#1C1510]' : isModern ? 'text-indigo-700' : 'text-stone-800'}`}
+                >
+                  {word.word}
+                </span>
+              ))}
+            </span>
+          </span>
         </button>
         <a
           href={`https://dle.rae.es/${encodeURIComponent(displayedWord)}`}
