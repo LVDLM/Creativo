@@ -30,7 +30,7 @@ const countLetter = (text: string, letter: string) => {
 
 const findWordsWithLetter = (text: string, letter: string) => {
   const normalizedLetter = normalizeForLetterCheck(letter);
-  return Array.from(new Set(text.match(/[\\p{L}]+/gu) || []))
+  return Array.from(new Set(text.match(/[\p{L}]+/gu) || []))
     .filter((word) => Array.from(normalizeForLetterCheck(word)).includes(normalizedLetter));
 };
 
@@ -100,7 +100,7 @@ export const LipogramLab: React.FC<LipogramLabProps> = ({
       setValidationPassed(false);
       return;
     }
-    onPublish(`EL LIPOGRAMA · LETRA PROHIBIDA: ${selectedLetter}\\n\\n${writingContent.trim()}`);
+    onPublish(`EL LIPOGRAMA · LETRA PROHIBIDA: ${selectedLetter}\n\n${writingContent.trim()}`);
   };
 
   return (
