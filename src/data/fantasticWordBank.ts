@@ -96,7 +96,7 @@ export const FANTASTIC_WORDS: FantasticWord[] = [
   { word: 'criba', category: 'herramientas' },
   { word: 'catapulta', category: 'herramientas' },
   { word: 'brida', category: 'herramientas' },
-  { word: 'yunta', category: 'herramientas' },
+  { word: 'garlopa', category: 'herramientas' },
   // Fenómenos y cielo
   { word: 'eclipse', category: 'fenómenos' },
   { word: 'cometa', category: 'fenómenos' },
