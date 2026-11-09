@@ -17,6 +17,7 @@ interface WritingAreaProps {
   maxWidth?: string;
   children?: React.ReactNode;
   textareaLabel?: string;
+  canPublish?: boolean;
 }
 
 export const WritingArea: React.FC<WritingAreaProps> = ({
@@ -33,7 +34,8 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
   theme = 'organic',
   maxWidth,
   children,
-  textareaLabel
+  textareaLabel,
+  canPublish = true
 }) => {
   const isMinimal = theme === 'minimal';
 
@@ -88,8 +90,9 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
             </button>
           )}
           <button 
-            disabled={isPublishing || !writingContent.trim()}
+            disabled={isPublishing || !writingContent.trim() || !canPublish}
             onClick={onPublish}
+            aria-disabled={isPublishing || !writingContent.trim() || !canPublish}
             className={`${
               isMinimal 
                 ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-body font-bold text-[12px] tracking-[0.06em]' 
