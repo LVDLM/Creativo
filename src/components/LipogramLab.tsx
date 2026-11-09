@@ -178,34 +178,34 @@ export const LipogramLab: React.FC<LipogramLabProps> = ({
           canPublish={hasValidated && validationPassed && occurrences === 0}
         />
 
-        <div className="mt-6">
-          <button
-            type="button"
-            onClick={handleValidate}
-            className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${isMinimal ? 'bg-[#0F5C52] text-white rounded-[2px] hover:bg-[#0B4A42]' : 'bg-indigo-600 text-white rounded-full hover:bg-indigo-700'}`}
-          >
-            <ShieldCheck className="w-4 h-4" /> Validar mi texto
-          </button>
+          afterTextarea={
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={handleValidate}
+                className={isMinimal ? "w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold uppercase tracking-wider bg-[#0F5C52] text-white rounded-[2px] hover:bg-[#0B4A42]" : "w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold uppercase tracking-wider bg-indigo-600 text-white rounded-full hover:bg-indigo-700"}
+              >
+                <ShieldCheck className="w-4 h-4" /> Validar mi texto
+              </button>
 
-          {hasValidated && (
-            <div className={`mt-4 p-4 border text-sm ${validationPassed
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-              : 'border-amber-200 bg-amber-50 text-amber-950'}`} role="status" aria-live="polite">
-              <div className="flex items-start gap-2">
-                {validationPassed ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <XCircle className="w-5 h-5 shrink-0" />}
-                <div>
-                  <p className="font-bold">{validationMessage}</p>
-                  {!validationPassed && wordsToFix.length > 0 && (
-                    <p className="mt-2 text-xs leading-relaxed">
-                      Revisa estas palabras: <strong>{wordsToFix.slice(0, 20).join(', ')}</strong>{wordsToFix.length > 20 ? '…' : ''}
-                    </p>
-                  )}
-                  {validationPassed && <p className="mt-1 text-xs">Ya puedes publicar tu lipograma.</p>}
+              {hasValidated && (
+                <div className={validationPassed ? "mt-4 p-4 border text-sm border-emerald-200 bg-emerald-50 text-emerald-900" : "mt-4 p-4 border text-sm border-amber-200 bg-amber-50 text-amber-950"} role="status" aria-live="polite">
+                  <div className="flex items-start gap-2">
+                    {validationPassed ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <XCircle className="w-5 h-5 shrink-0" />}
+                    <div>
+                      <p className="font-bold">{validationMessage}</p>
+                      {!validationPassed && wordsToFix.length > 0 && (
+                        <p className="mt-2 text-xs leading-relaxed">
+                          Revisa estas palabras: <strong>{wordsToFix.slice(0, 20).join(", ")}</strong>{wordsToFix.length > 20 ? "…" : ""}
+                        </p>
+                      )}
+                      {validationPassed && <p className="mt-1 text-xs">Ya puedes publicar tu lipograma.</p>}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
-          )}
-        </div>
+          }
       </section>
     </div>
   );
