@@ -19,7 +19,7 @@ interface LipogramLabProps {
 const SPANISH_ALPHABET = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
 
 const normalizeForLetterCheck = (value: string) =>
-  value.toLocaleLowerCase('es').replace(/[áàäâ]/g, 'a').replace(/[éèëê]/g, 'e')
+  value.normalize('NFC').toLocaleLowerCase('es').replace(/[áàäâ]/g, 'a').replace(/[éèëê]/g, 'e')
     .replace(/[íìïî]/g, 'i').replace(/[óòöô]/g, 'o').replace(/[úùüû]/g, 'u');
 
 const countLetter = (text: string, letter: string) => {
