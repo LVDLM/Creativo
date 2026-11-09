@@ -1,0 +1,22 @@
+export const STARTER_HYPOTHESES = [
+  '¿Qué pasaría si los recuerdos pudieran intercambiarse como libros?',
+  '¿Qué pasaría si una ciudad cambiara de lugar cada noche?',
+  '¿Qué pasaría si los animales pudieran votar en las elecciones?',
+  '¿Qué pasaría si cada persona tuviera una sombra con personalidad propia?',
+  '¿Qué pasaría si un día al año nadie pudiera mentir?',
+  '¿Qué pasaría si las fotografías mostraran también lo que ocurrió un minuto después?',
+  '¿Qué pasaría si pudieras recibir cartas de tu yo del futuro?',
+  '¿Qué pasaría si las palabras olvidadas volvieran a aparecer en los objetos?',
+  '¿Qué pasaría si los sueños fueran un lugar al que todos pudiéramos viajar?',
+  '¿Qué pasaría si la lluvia hiciera crecer recuerdos en lugar de plantas?',
+  '¿Qué pasaría si cada puerta condujera a una época distinta?',
+  '¿Qué pasaría si los libros pudieran elegir a sus lectores?',
+  '¿Qué pasaría si el silencio tuviera un sonido diferente para cada persona?',
+  '¿Qué pasaría si pudieras borrar una sola norma del mundo?',
+  '¿Qué pasaría si las estrellas fueran ventanas encendidas?',
+  '¿Qué pasaría si una mañana despertaras con el recuerdo de otra persona?',
+  '¿Qué pasaría si los objetos perdidos pudieran regresar por sí solos?',
+  '¿Qué pasaría si el tiempo se detuviera durante una conversación?',
+  '¿Qué pasaría si las ciudades tuvieran memoria?',
+  '¿Qué pasaría si una pregunta pudiera cambiar el pasado?'
+];
