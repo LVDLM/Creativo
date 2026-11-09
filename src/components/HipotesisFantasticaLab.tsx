@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { User } from 'firebase/auth';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { ArrowRight, Lightbulb, RefreshCw, Send, Sparkles } from 'lucide-react';
+import { ArrowRight, Lightbulb, RefreshCw, Send } from 'lucide-react';
 import { db } from '../firebase';
 import { STARTER_HYPOTHESES } from '../data/fantasticHypotheses';
 
@@ -156,7 +156,7 @@ export const HipotesisFantasticaLab: React.FC<HipotesisFantasticaLabProps> = ({
         ) : (
           <div className="p-5 md:p-8">
             <div className="flex items-center gap-3 mb-5">
-              <span className="w-8 h-8 flex items-center justify-center bg-[#EDE8DF] text-[#1C1510]"><Sparkles className="w-4 h-4" /></span>
+              <span className="w-8 h-8 flex items-center justify-center bg-[#EDE8DF] text-[#1C1510]"><Lightbulb className="w-4 h-4" /></span>
               <div>
                 <h3 className="font-bold text-lg">Añade una pregunta al banco</h3>
                 <p className="text-sm text-[#6B6258]">Una buena hipótesis invita a imaginar, no a responder sí o no.</p>
