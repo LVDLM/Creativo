@@ -176,8 +176,6 @@ export const LipogramLab: React.FC<LipogramLabProps> = ({
           maxWidth="100%"
           textareaLabel={`Tu texto (sin la letra ${selectedLetter})`}
           canPublish={hasValidated && validationPassed && occurrences === 0}
-        />
-
           afterTextarea={
             <div className="mt-2">
               <button
@@ -206,6 +204,7 @@ export const LipogramLab: React.FC<LipogramLabProps> = ({
               )}
             </div>
           }
+        />
       </section>
     </div>
   );
