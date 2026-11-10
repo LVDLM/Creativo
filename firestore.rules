@@ -77,7 +77,399 @@ service cloud.firestore {
              data.status == 'pending' &&
              data.isGuest == false &&
              (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200)) &&
-             (!('likesCount' in data) || data.likesCount == 0);
+             (!('likesCount' in data) || data.likesCount == 0) &&
+             (!('entryTerm' in data) || (data.entryTerm is string && data.entryTerm.size() > 0 && data.entryTerm.size() < 120)) &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.matches('^https://picsum\\.photos/.*
+    }
+
+    function isValidGuestPublication(data) {
+      return data.keys().hasAll(['challengeId', 'authorId', 'authorName', 'content', 'createdAt', 'isModerated', 'isGuest', 'status']) &&
+             data.challengeId is string && data.challengeId.size() > 0 && data.challengeId.size() < 100 &&
+             data.authorId == "guest" &&
+             data.authorName is string && data.authorName.size() > 0 && data.authorName.size() < 100 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
+             data.createdAt == request.time &&
+             data.isModerated == false &&
+             data.isGuest == true &&
+             (!('submissionType' in data) || (data.submissionType in ['story', 'hypothesis'] && data.challengeId == 'lab-hipotesis-fantastica')) &&
+             data.status == "pending" &&
+             (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200)) &&
+             (!('entryTerm' in data) || (data.entryTerm is string && data.entryTerm.size() > 0 && data.entryTerm.size() < 120)) &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.matches('^https://picsum\\.photos/.*
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['displayName', 'email', 'role']) &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 100 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.role in ['admin', 'user'] &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() < 500));
+    }
+
+    function isValidLike(data, likeId) {
+      return data.keys().hasAll(['userId', 'publicationId', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.publicationId is string &&
+             likeId == request.auth.uid + "_" + data.publicationId &&
+             data.createdAt == request.time;
+    }
+
+    function isValidContactMessage(data) {
+      return data.keys().hasAll(['name', 'email', 'message', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.message is string && data.message.size() > 0 && data.message.size() < 5000 &&
+             data.createdAt == request.time &&
+             (!('subject' in data) || data.subject == null || (data.subject is string && data.subject.size() < 200));
+    }
+
+    function isValidSuggestion(data) {
+      return data.keys().hasAll(['content', 'createdAt']) &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
+             data.createdAt == request.time &&
+             (!('authorName' in data) || data.authorName == null || (data.authorName is string && data.authorName.size() < 100)) &&
+             (!('authorId' in data) || data.authorId == null || (data.authorId is string && data.authorId.size() < 100)) &&
+             (!('authorEmail' in data) || data.authorEmail == null || (data.authorEmail is string && data.authorEmail.size() < 200)) &&
+             (!('isStarred' in data) || data.isStarred is bool);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /publications/{pubId} {
+      // Anyone can read moderated publications
+      // Admins can read all publications
+      allow read: if resource.data.isModerated == true || isAdmin();
+      
+      // Authenticated users can create their own publications
+      // Unauthenticated users can create guest publications
+      allow create: if (isAuthenticated() && isValidPublication(request.resource.data)) || 
+                       (!isAuthenticated() && isValidGuestPublication(request.resource.data));
+      
+      // Only owners or admins can delete
+      allow delete: if isAdmin();
+      
+      // Admins can update publications (for manual moderation/editing)
+      // Users can increment likesCount if they have created a like document
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount']) &&
+        request.resource.data.likesCount == resource.data.likesCount + 1 &&
+        exists(/databases/$(database)/documents/likes/$(request.auth.uid + "_" + pubId))
+      );
+    }
+
+    match /hypotheses/{hypothesisId} {
+      // El banco solo es visible cuando la hipótesis ha sido aprobada.
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['content', 'status', 'createdAt', 'createdBy', 'sourcePublicationId']) &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() > 0 &&
+        request.resource.data.content.size() < 300 &&
+        request.resource.data.status == 'approved';
+      allow update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      // Users can only read their own profile
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can create/update their own profile, but cannot set themselves as admin
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+    
+    match /likes/{likeId} {
+      // Users can read their own likes
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can create a like if it's valid
+      allow create: if isAuthenticated() && isValidLike(request.resource.data, likeId);
+    }
+
+    match /contact_messages/{msgId} {
+      // Anyone can create a contact message
+      allow create: if isValidContactMessage(request.resource.data);
+      
+      // Only admins can read, update, and delete contact messages
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /suggestions/{suggId} {
+      // Anyone can submit a suggestion
+      allow create: if isValidSuggestion(request.resource.data) &&
+        request.resource.data.isStarred == false &&
+        request.resource.data.authorId == (isAuthenticated() ? request.auth.uid : 'guest') &&
+        (!isAuthenticated() || request.resource.data.authorEmail == request.auth.token.email);
+      
+      // Only admins can read, update (star/unstar), and delete suggestions
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+))) &&
+             (!('emotion' in data) || data.emotion == null || (data.emotion is string && data.emotion.size() < 80));
+    }
+
+    function isValidGuestPublication(data) {
+      return data.keys().hasAll(['challengeId', 'authorId', 'authorName', 'content', 'createdAt', 'isModerated', 'isGuest', 'status']) &&
+             data.challengeId is string && data.challengeId.size() > 0 && data.challengeId.size() < 100 &&
+             data.authorId == "guest" &&
+             data.authorName is string && data.authorName.size() > 0 && data.authorName.size() < 100 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
+             data.createdAt == request.time &&
+             data.isModerated == false &&
+             data.isGuest == true &&
+             (!('submissionType' in data) || (data.submissionType in ['story', 'hypothesis'] && data.challengeId == 'lab-hipotesis-fantastica')) &&
+             data.status == "pending" &&
+             (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['displayName', 'email', 'role']) &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 100 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.role in ['admin', 'user'] &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() < 500));
+    }
+
+    function isValidLike(data, likeId) {
+      return data.keys().hasAll(['userId', 'publicationId', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.publicationId is string &&
+             likeId == request.auth.uid + "_" + data.publicationId &&
+             data.createdAt == request.time;
+    }
+
+    function isValidContactMessage(data) {
+      return data.keys().hasAll(['name', 'email', 'message', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.message is string && data.message.size() > 0 && data.message.size() < 5000 &&
+             data.createdAt == request.time &&
+             (!('subject' in data) || data.subject == null || (data.subject is string && data.subject.size() < 200));
+    }
+
+    function isValidSuggestion(data) {
+      return data.keys().hasAll(['content', 'createdAt']) &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
+             data.createdAt == request.time &&
+             (!('authorName' in data) || data.authorName == null || (data.authorName is string && data.authorName.size() < 100)) &&
+             (!('authorId' in data) || data.authorId == null || (data.authorId is string && data.authorId.size() < 100)) &&
+             (!('authorEmail' in data) || data.authorEmail == null || (data.authorEmail is string && data.authorEmail.size() < 200)) &&
+             (!('isStarred' in data) || data.isStarred is bool);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /publications/{pubId} {
+      // Anyone can read moderated publications
+      // Admins can read all publications
+      allow read: if resource.data.isModerated == true || isAdmin();
+      
+      // Authenticated users can create their own publications
+      // Unauthenticated users can create guest publications
+      allow create: if (isAuthenticated() && isValidPublication(request.resource.data)) || 
+                       (!isAuthenticated() && isValidGuestPublication(request.resource.data));
+      
+      // Only owners or admins can delete
+      allow delete: if isAdmin();
+      
+      // Admins can update publications (for manual moderation/editing)
+      // Users can increment likesCount if they have created a like document
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount']) &&
+        request.resource.data.likesCount == resource.data.likesCount + 1 &&
+        exists(/databases/$(database)/documents/likes/$(request.auth.uid + "_" + pubId))
+      );
+    }
+
+    match /hypotheses/{hypothesisId} {
+      // El banco solo es visible cuando la hipótesis ha sido aprobada.
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['content', 'status', 'createdAt', 'createdBy', 'sourcePublicationId']) &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() > 0 &&
+        request.resource.data.content.size() < 300 &&
+        request.resource.data.status == 'approved';
+      allow update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      // Users can only read their own profile
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can create/update their own profile, but cannot set themselves as admin
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+    
+    match /likes/{likeId} {
+      // Users can read their own likes
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can create a like if it's valid
+      allow create: if isAuthenticated() && isValidLike(request.resource.data, likeId);
+    }
+
+    match /contact_messages/{msgId} {
+      // Anyone can create a contact message
+      allow create: if isValidContactMessage(request.resource.data);
+      
+      // Only admins can read, update, and delete contact messages
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /suggestions/{suggId} {
+      // Anyone can submit a suggestion
+      allow create: if isValidSuggestion(request.resource.data) &&
+        request.resource.data.isStarred == false &&
+        request.resource.data.authorId == (isAuthenticated() ? request.auth.uid : 'guest') &&
+        (!isAuthenticated() || request.resource.data.authorEmail == request.auth.token.email);
+      
+      // Only admins can read, update (star/unstar), and delete suggestions
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+))) &&
+             (!('emotion' in data) || data.emotion == null || (data.emotion is string && data.emotion.size() < 80));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['displayName', 'email', 'role']) &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 100 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.role in ['admin', 'user'] &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() < 500));
+    }
+
+    function isValidLike(data, likeId) {
+      return data.keys().hasAll(['userId', 'publicationId', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.publicationId is string &&
+             likeId == request.auth.uid + "_" + data.publicationId &&
+             data.createdAt == request.time;
+    }
+
+    function isValidContactMessage(data) {
+      return data.keys().hasAll(['name', 'email', 'message', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.message is string && data.message.size() > 0 && data.message.size() < 5000 &&
+             data.createdAt == request.time &&
+             (!('subject' in data) || data.subject == null || (data.subject is string && data.subject.size() < 200));
+    }
+
+    function isValidSuggestion(data) {
+      return data.keys().hasAll(['content', 'createdAt']) &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
+             data.createdAt == request.time &&
+             (!('authorName' in data) || data.authorName == null || (data.authorName is string && data.authorName.size() < 100)) &&
+             (!('authorId' in data) || data.authorId == null || (data.authorId is string && data.authorId.size() < 100)) &&
+             (!('authorEmail' in data) || data.authorEmail == null || (data.authorEmail is string && data.authorEmail.size() < 200)) &&
+             (!('isStarred' in data) || data.isStarred is bool);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /publications/{pubId} {
+      // Anyone can read moderated publications
+      // Admins can read all publications
+      allow read: if resource.data.isModerated == true || isAdmin();
+      
+      // Authenticated users can create their own publications
+      // Unauthenticated users can create guest publications
+      allow create: if (isAuthenticated() && isValidPublication(request.resource.data)) || 
+                       (!isAuthenticated() && isValidGuestPublication(request.resource.data));
+      
+      // Only owners or admins can delete
+      allow delete: if isAdmin();
+      
+      // Admins can update publications (for manual moderation/editing)
+      // Users can increment likesCount if they have created a like document
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount']) &&
+        request.resource.data.likesCount == resource.data.likesCount + 1 &&
+        exists(/databases/$(database)/documents/likes/$(request.auth.uid + "_" + pubId))
+      );
+    }
+
+    match /hypotheses/{hypothesisId} {
+      // El banco solo es visible cuando la hipótesis ha sido aprobada.
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['content', 'status', 'createdAt', 'createdBy', 'sourcePublicationId']) &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() > 0 &&
+        request.resource.data.content.size() < 300 &&
+        request.resource.data.status == 'approved';
+      allow update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      // Users can only read their own profile
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can create/update their own profile, but cannot set themselves as admin
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+    
+    match /likes/{likeId} {
+      // Users can read their own likes
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can create a like if it's valid
+      allow create: if isAuthenticated() && isValidLike(request.resource.data, likeId);
+    }
+
+    match /contact_messages/{msgId} {
+      // Anyone can create a contact message
+      allow create: if isValidContactMessage(request.resource.data);
+      
+      // Only admins can read, update, and delete contact messages
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /suggestions/{suggId} {
+      // Anyone can submit a suggestion
+      allow create: if isValidSuggestion(request.resource.data) &&
+        request.resource.data.isStarred == false &&
+        request.resource.data.authorId == (isAuthenticated() ? request.auth.uid : 'guest') &&
+        (!isAuthenticated() || request.resource.data.authorEmail == request.auth.token.email);
+      
+      // Only admins can read, update (star/unstar), and delete suggestions
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+))) &&
+             (!('emotion' in data) || data.emotion == null || (data.emotion is string && data.emotion.size() < 80));
     }
 
     function isValidGuestPublication(data) {
