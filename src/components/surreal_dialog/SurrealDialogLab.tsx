@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { getLabActivityTitleClass } from '../labActivityStyles';
 import { RefreshCw } from 'lucide-react';
 import RouletteWheel from './RouletteWheel';
 import { WORD_LIST } from './constants';
@@ -85,8 +86,8 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
     if (isMinimal) {
       return (
         <div className="flex flex-col items-center sm:items-start select-none">
-          <h1 className="flex flex-wrap justify-center sm:justify-start gap-x-1 md:gap-x-2">
-            <span className="font-editorial text-[32px] md:text-[52px] text-[#1C1510] tracking-tight">
+          <h1 className={`${getLabActivityTitleClass(theme)} flex flex-wrap justify-center sm:justify-start gap-x-1 md:gap-x-2`}>
+            <span className="text-[#1C1510]">
               Diálogos Surrealistas
             </span>
           </h1>
@@ -96,12 +97,12 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
 
     return (
       <div className="flex flex-col items-center sm:items-start select-none [perspective:1000px]">
-        <h1 className="flex flex-wrap justify-center sm:justify-start gap-x-1 md:gap-x-2">
+        <h1 className={`${getLabActivityTitleClass(theme)} flex flex-wrap justify-center sm:justify-start gap-x-1 md:gap-x-2`}>
           <span className="flex">
             {word1.map((char, i) => (
               <span
                 key={`w1-${i}`}
-                className={`inline-block font-black text-2xl md:text-5xl text-slate-900 ${getSurrealClass(i)}`}
+                className={`inline-block text-slate-900 ${getSurrealClass(i)}`}
                 style={{
                   animationDelay: `${i * 0.2}s`,
                   transformStyle: 'preserve-3d',
@@ -117,7 +118,7 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
             {word2.map((char, i) => (
               <span
                 key={`w2-${i}`}
-                className={`inline-block font-black text-2xl md:text-5xl text-indigo-600 ${getSurrealClass(i + 8)}`}
+                className={`inline-block text-indigo-600 ${getSurrealClass(i + 8)}`}
                 style={{
                   animationDelay: `${(i + 5) * 0.3}s`,
                   transformStyle: 'preserve-3d',
