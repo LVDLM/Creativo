@@ -24,6 +24,9 @@ export interface Publication {
   status?: 'pending' | 'approved' | 'rejected';
   isGuest?: boolean;
   submissionType?: 'story' | 'hypothesis';
+  entryTerm?: string;
+  imageUrl?: string;
+  emotion?: string | null;
 }
 
 export interface ContactMessage {
