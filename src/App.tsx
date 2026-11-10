@@ -1140,7 +1140,7 @@ export default function App() {
   };
 
   const renderGallery = () => {
-    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says', 'lab-lipograma', 'lab-binomio-fantastico', 'lab-hipotesis-fantastica'];
+    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says', 'lab-lipograma', 'lab-binomio-fantastico', 'lab-hipotesis-fantastica', 'lab-diccionario-criaturlogico', 'lab-emitologias', 'lab-palabrando-imagenes'];
     const isMinimal = theme === 'minimal';
     
     // Determine type for filtering
@@ -1265,7 +1265,10 @@ export default function App() {
                   'lab-surreal-dialog': 'Diálogos Surrealistas',
                   'lab-poetry-says': 'En poesía se dice...',
                   'lab-binomio-fantastico': 'El binomio fantástico',
-                  'lab-hipotesis-fantastica': 'La hipótesis fantástica'
+                  'lab-hipotesis-fantastica': 'La hipótesis fantástica',
+                  'lab-diccionario-criaturlogico': 'Diccionario Criaturlógico',
+                  'lab-emitologias': 'Emitologías',
+                  'lab-palabrando-imagenes': 'Palabrando imágenes'
                 };
                 const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
                 const dotColor = getCategoryColor(pub.challengeId);
@@ -1288,6 +1291,8 @@ export default function App() {
                     </div>
 
                     <div className="flex-grow mb-6">
+                      {pub.imageUrl && <img src={pub.imageUrl} alt="Imagen asociada a la aportación" className="w-full aspect-[16/9] object-cover mb-4" />}
+                      {pub.emotion && <p className="text-[10px] uppercase tracking-widest text-[#0F5C52] font-bold mb-2">Emoción: {pub.emotion}</p>}
                       <p className="font-editorial text-[15px] leading-[1.7] text-[#1C1510] whitespace-pre-wrap">
                         {pub.content}
                       </p>
@@ -1329,7 +1334,10 @@ export default function App() {
                 'lab-micro-story': 'Microhistorias',
                 'lab-weather-action': 'Tiempo y Acciones',
                 'lab-surreal-dialog': 'Diálogos Surrealistas',
-                'lab-poetry-says': 'En poesía se dice...'
+                'lab-poetry-says': 'En poesía se dice...',
+                'lab-diccionario-criaturlogico': 'Diccionario Criaturlógico',
+                'lab-emitologias': 'Emitologías',
+                'lab-palabrando-imagenes': 'Palabrando imágenes'
               };
               const typeLabel = getPubType(pub) === 'laboratorio' ? 'Laboratorio' : getPubType(pub) === 'simon' ? 'Simón dice...' : 'Reto';
               const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
@@ -1411,11 +1419,18 @@ export default function App() {
                         </div>
                       </div>
                     ) : (
-                      <p className={`font-editorial text-[#1C1510] leading-[1.7] whitespace-pre-wrap overflow-hidden ${
-                        isFeatured ? 'text-[18px] line-clamp-6' : 'text-[15px] line-clamp-5'
-                      }`}>
-                        {pub.content}
-                      </p>
+                      <div className="space-y-3">
+                        {pub.imageUrl && <img src={pub.imageUrl} alt="Imagen de inspiración de la publicación" className="w-full aspect-[16/9] object-cover" />}
+                        {pub.emotion && <p className="text-[10px] uppercase tracking-widest text-[#0F5C52] font-bold">Emoción: {pub.emotion}</p>}
+                        {pub.challengeId === 'lab-palabrando-imagenes' ? (
+                          <>
+                            <p className={`font-editorial text-[#1C1510] leading-[1.7] whitespace-pre-wrap ${isFeatured ? 'text-[18px]' : 'text-[15px]'}`}>{pub.content.split(/\n\s*\n/)[0]}</p>
+                            {pub.content.split(/\n\s*\n/).slice(1).join('\n\n').trim() && <p className={`font-editorial italic text-[#1C1510] leading-[1.7] whitespace-pre-wrap ${isFeatured ? 'text-[18px]' : 'text-[15px]'}`}>{pub.content.split(/\n\s*\n/).slice(1).join('\n\n').trim()}</p>}
+                          </>
+                        ) : (
+                          <p className={`font-editorial text-[#1C1510] leading-[1.7] whitespace-pre-wrap overflow-hidden ${isFeatured ? 'text-[18px] line-clamp-6' : 'text-[15px] line-clamp-5'}`}>{pub.content}</p>
+                        )}
+                      </div>
                     )}
                   </div>
 
