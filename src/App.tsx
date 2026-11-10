@@ -245,9 +245,47 @@ export default function App() {
     tags: ['Laboratorio', 'Imaginación', 'Narrativa']
   });
 
-  LAB_ACTIVITIES.push({ id: 'lab-diccionario-criaturlogico', title: 'Diccionario Criaturlógico', description: 'Inventa una criatura, ponle nombre y descríbela. Si quieres, añade también alguna leyenda.', difficulty: 'Variable', duration: '10–15 min', category: 'Laboratorio', icon: 'BookOpen', example: 'Una criatura imaginaria y su historia.', isLab: true, labId: 'diccionariocriaturlogico', tags: ['Laboratorio', 'Imaginación', 'Diccionario'] });
-  LAB_ACTIVITIES.push({ id: 'lab-emitologias', title: 'Emitologías', description: 'Elige una palabra e inventa por completo la historia de su origen.', difficulty: 'Variable', duration: '10 min', category: 'Laboratorio', icon: 'BookOpen', example: 'Una etimología apócrifa, sorprendente y convincente.', isLab: true, labId: 'emitologias', tags: ['Laboratorio', 'Palabras', 'Diccionario'] });
-  LAB_ACTIVITIES.push({ id: 'lab-palabrando-imagenes', title: 'Palabrando imágenes', description: 'Describe la imagen que aparece y cuenta, en cursiva, cómo la ves.', difficulty: 'Variable', duration: '10–15 min', category: 'Laboratorio', icon: 'Image', example: 'Una imagen, dos miradas: lo que aparece y lo que despierta.', isLab: true, labId: 'palabrandoimagenes', tags: ['Laboratorio', 'Imágenes', 'Emociones'] });
+  LAB_ACTIVITIES.push({
+    id: 'lab-diccionario-criaturlogico',
+    title: 'Diccionario Criaturlógico',
+    description: 'Inventa una criatura, ponle nombre y descríbela. Si quieres, añade también alguna leyenda.',
+    difficulty: 'Variable',
+    duration: '10–15 min',
+    category: 'Laboratorio',
+    icon: 'BookOpen',
+    example: 'Una criatura imaginaria y su historia.',
+    isLab: true,
+    labId: 'diccionariocriaturlogico',
+    tags: ['Laboratorio', 'Imaginación', 'Diccionario']
+  });
+
+  LAB_ACTIVITIES.push({
+    id: 'lab-emitologias',
+    title: 'Emitologías',
+    description: 'Elige una palabra e inventa por completo la historia de su origen.',
+    difficulty: 'Variable',
+    duration: '10 min',
+    category: 'Laboratorio',
+    icon: 'BookOpen',
+    example: 'Una etimología apócrifa, sorprendente y convincente.',
+    isLab: true,
+    labId: 'emitologias',
+    tags: ['Laboratorio', 'Palabras', 'Diccionario']
+  });
+
+  LAB_ACTIVITIES.push({
+    id: 'lab-palabrando-imagenes',
+    title: 'Palabrando imágenes',
+    description: 'Describe la imagen que aparece y cuenta, en cursiva, cómo la ves.',
+    difficulty: 'Variable',
+    duration: '10–15 min',
+    category: 'Laboratorio',
+    icon: 'Image',
+    example: 'Una imagen, dos miradas: lo que aparece y lo que despierta.',
+    isLab: true,
+    labId: 'palabrandoimagenes',
+    tags: ['Laboratorio', 'Imágenes', 'Emociones']
+  });
 
   const ALL_ACTIVITIES = [...LAB_ACTIVITIES, ...CHALLENGES];
 
@@ -1936,20 +1974,6 @@ export default function App() {
               <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Responde a una pregunta inesperada o propón una hipótesis para inspirar a otros escritores.</p>
               <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
                 Abrir Herramienta
-              </button>
-            </motion.div>
-
-            <motion.div 
-              whileHover={{ y: -5 }}
-              className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] opacity-50' : 'card opacity-50'} p-10 flex flex-col items-center text-center group transition-all`}
-            >
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
-                <Globe className="w-10 h-10" />
-              </div>
-              <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>Generador de Mundos</h3>
-              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Crea ecosistemas, mitologías y geografías únicas para tus historias de fantasía o ciencia ficción.</p>
-              <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em] opacity-50 cursor-not-allowed' : 'olive-button opacity-50 cursor-not-allowed'}`}>
-                Próximamente
               </button>
             </motion.div>
 
