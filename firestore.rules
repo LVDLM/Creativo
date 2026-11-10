@@ -77,7 +77,10 @@ service cloud.firestore {
              data.status == 'pending' &&
              data.isGuest == false &&
              (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200)) &&
-             (!('likesCount' in data) || data.likesCount == 0);
+             (!('likesCount' in data) || data.likesCount == 0) &&
+             (!('entryTerm' in data) || (data.entryTerm is string && data.entryTerm.size() > 0 && data.entryTerm.size() < 120)) &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.matches('^https://picsum\\.photos/.*$'))) &&
+             (!('emotion' in data) || data.emotion == null || (data.emotion is string && data.emotion.size() < 80));
     }
 
     function isValidGuestPublication(data) {
@@ -91,7 +94,10 @@ service cloud.firestore {
              data.isGuest == true &&
              (!('submissionType' in data) || (data.submissionType in ['story', 'hypothesis'] && data.challengeId == 'lab-hipotesis-fantastica')) &&
              data.status == "pending" &&
-             (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200));
+             (!('subTitle' in data) || data.subTitle == null || (data.subTitle is string && data.subTitle.size() < 200)) &&
+             (!('entryTerm' in data) || (data.entryTerm is string && data.entryTerm.size() > 0 && data.entryTerm.size() < 120)) &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.matches('^https://picsum\\.photos/.*$'))) &&
+             (!('emotion' in data) || data.emotion == null || (data.emotion is string && data.emotion.size() < 80));
     }
 
     function isValidUser(data) {
