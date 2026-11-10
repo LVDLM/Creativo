@@ -30,7 +30,7 @@ export const PoetryLab: React.FC<PoetryLabProps> = ({
   return (
     <div className={`max-w-4xl mx-auto p-6 ${isMinimal ? 'font-body text-[#1C1510]' : ''}`}>
       <div className="text-center mb-12">
-        <h2 className={`${isMinimal ? 'font-editorial text-[32px] md:text-[42px] leading-tight' : 'text-4xl font-bold'} mb-4 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>
+        <h2 className={`${isMinimal ? 'font-editorial text-[32px] md:text-[42px] leading-tight font-bold' : 'text-4xl font-bold'} mb-4 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>
           En poesía se dice...
         </h2>
         <p className={`max-w-xl mx-auto italic ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>
