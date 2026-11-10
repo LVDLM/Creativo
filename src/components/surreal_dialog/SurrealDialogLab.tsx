@@ -90,9 +90,6 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
               Diálogos Surrealistas
             </span>
           </h1>
-          <p className="text-[10px] md:text-xs text-[#5A4A3A] uppercase tracking-[0.2em] font-bold mt-1 ml-1 [font-variant:small-caps]">
-            Laboratorio Literario
-          </p>
         </div>
       );
     }
@@ -133,9 +130,6 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
             ))}
           </span>
         </h1>
-        <p className="text-[10px] md:text-sm text-indigo-500/70 uppercase tracking-[0.3em] font-black italic mt-2 ml-1">
-          Laboratorio Literario
-        </p>
       </div>
     );
   };
@@ -168,7 +162,7 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
       <header className="w-full max-w-5xl flex flex-col items-center text-center mb-10 md:mb-12 gap-3 z-10 relative">
         {renderSurrealTitle()}
         <p className={`max-w-2xl text-sm md:text-base leading-relaxed italic ${isMinimal ? 'text-[#5A5040]' : 'opacity-60'}`}>
-          Genera personajes absurdos y crea conversaciones imposibles entre objetos y conceptos.
+          Imagina situaciones surrealistas y crea conversaciones imposibles entre objetos o conceptos.
         </p>
       </header>
 
