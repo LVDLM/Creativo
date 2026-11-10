@@ -136,7 +136,7 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
   };
 
   return (
-    <div className={`relative p-4 md:p-8 max-w-full overflow-hidden ${isMinimal ? 'font-body text-[#1C1510]' : ''}`}>
+    <div className={`relative max-w-4xl mx-auto p-4 md:p-6 overflow-hidden ${isMinimal ? 'font-body text-[#1C1510]' : ''}`}>
       {/* Decorative Bubbles */}
       {!isMinimal && (
         <>
@@ -160,7 +160,7 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
       />
 
       {/* Header */}
-      <header className="w-full max-w-5xl flex flex-col items-center text-center mb-10 md:mb-12 gap-3 z-10 relative">
+      <header className="w-full max-w-4xl flex flex-col items-center text-center mb-10 md:mb-12 gap-3 z-10 relative">
         {renderSurrealTitle()}
         <p className={`max-w-2xl text-sm md:text-base leading-relaxed italic ${isMinimal ? 'text-[#5A5040]' : 'opacity-60'}`}>
           Imagina situaciones surrealistas y crea conversaciones imposibles entre objetos o conceptos.
@@ -168,9 +168,9 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
       </header>
 
       {/* Main Content */}
-      <div className="w-full max-w-5xl mx-auto flex flex-col items-center z-10 relative">
+      <div className="w-full max-w-4xl mx-auto flex flex-col items-center z-10 relative">
         {/* Controls */}
-        <div className={`p-6 md:p-8 border-2 border-black w-full max-w-2xl mb-8 md:mb-16 ${
+        <div className={`p-6 md:p-8 border-2 border-black w-full max-w-2xl mb-8 ${
           isMinimal 
             ? 'bg-white rounded-[2px] shadow-sm' 
             : 'bg-white rounded-[2.5rem] shadow-[10px_10px_0px_rgba(99,102,241,0.2)]'
@@ -225,7 +225,7 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
         </div>
 
         {/* Wheels Container */}
-        <div className="flex flex-wrap justify-center gap-x-4 md:gap-x-8 lg:gap-x-12 gap-y-6 md:gap-y-10 mb-12 md:mb-20 w-full max-w-5xl">
+        <div className="flex flex-wrap justify-center gap-x-4 md:gap-x-8 lg:gap-x-12 gap-y-6 md:gap-y-10 mb-16 w-full max-w-4xl">
           {selectedWords.map((word, idx) => (
             <RouletteWheel 
               key={idx}
