@@ -12,7 +12,7 @@ interface NewLaboratoryActivitiesProps {
   pseudonym: string;
   setPseudonym: (value: string) => void;
   publications: Publication[];
-  onPublish: (content: string, metadata: Record<string, unknown>) => Promise<void> | void;
+  onPublish: (content: string, metadata: Record<string, unknown>) => Promise<boolean | void> | void;
   isPublishing: boolean;
   publishSuccess: boolean;
   onLogin: () => void;
@@ -93,7 +93,8 @@ export const NewLaboratoryActivities: React.FC<NewLaboratoryActivitiesProps> = (
       : { imageUrl, emotion: emotion || null };
     setSubmitError('');
     try {
-      await onPublish(content.trim(), metadata);
+      const result = await onPublish(content.trim(), metadata);
+      if (result === false) throw new Error('La publicación no se ha guardado.');
       setContent('');
       if (activityId === 'palabrandoimagenes') setImageSeed(Math.random().toString(36).slice(2, 11));
     } catch {
