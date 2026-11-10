@@ -1641,7 +1641,7 @@ export default function App() {
               setWritingContent={setWritingContent}
               pseudonym={pseudonym}
               setPseudonym={setPseudonym}
-              onPublish={(content) => handlePublish('lab-binomio-fantastico', content)}
+              onPublish={(content, wordPair) => handlePublish('lab-binomio-fantastico', content, undefined, wordPair ? `El binomio fantástico (${wordPair})` : 'El binomio fantástico')}
               isPublishing={isPublishing}
               publishSuccess={publishSuccess}
               onLogin={handleLogin}
