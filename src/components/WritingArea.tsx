@@ -17,6 +17,8 @@ interface WritingAreaProps {
   maxWidth?: string;
   children?: React.ReactNode;
   textareaLabel?: string;
+  canPublish?: boolean;
+  afterTextarea?: React.ReactNode;
 }
 
 export const WritingArea: React.FC<WritingAreaProps> = ({
@@ -33,7 +35,9 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
   theme = 'organic',
   maxWidth,
   children,
-  textareaLabel
+  textareaLabel,
+  canPublish = true,
+  afterTextarea
 }) => {
   const isMinimal = theme === 'minimal';
 
@@ -78,6 +82,7 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
             }`}
           />
         </div>
+        {afterTextarea}
         <div className="flex flex-col md:flex-row justify-end gap-4 items-center">
           {!user && (
             <button 
@@ -88,13 +93,14 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
             </button>
           )}
           <button 
-            disabled={isPublishing || !writingContent.trim()}
+            disabled={isPublishing || !writingContent.trim() || !canPublish}
             onClick={onPublish}
+            aria-disabled={isPublishing || !writingContent.trim() || !canPublish}
             className={`${
               isMinimal 
                 ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-body font-bold text-[12px] tracking-[0.06em]' 
                 : 'olive-button'
-            } flex items-center transition-all ${isPublishing ? 'opacity-50 cursor-not-allowed' : ''}`}
+            } flex items-center transition-all ${isPublishing || !writingContent.trim() || !canPublish ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {publishSuccess ? (
               <><CheckCircle2 className="w-4 h-4 mr-2" /> {user ? 'Publicado' : 'Enviado a moderación'}</>

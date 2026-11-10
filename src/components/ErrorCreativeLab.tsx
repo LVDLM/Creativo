@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { User } from 'firebase/auth';
 import { RefreshCw, Sparkles, WandSparkles } from 'lucide-react';
 import { WritingArea } from './WritingArea';
+import { getLabActivityTitleClass } from './labActivityStyles';
 
 type TriggerKind = 'Palabra' | 'Expresión' | 'Interpretación';
 
@@ -26,66 +27,29 @@ interface ErrorCreativeLabProps {
 }
 
 const TRIGGERS: CreativeTrigger[] = [
-  {
-    kind: 'Palabra',
-    source: 'Murciélago / Murcia-lago',
-    twist: 'Un lago escondido aparece cada noche sobre los tejados de Murcia.',
-    nudge: '¿Quién lo descubrió y qué criatura vive en sus aguas?'
-  },
-  {
-    kind: 'Palabra',
-    source: 'Estatu(a) / estatua',
-    twist: 'Una estatua pierde una letra y, con ella, deja de ser de piedra.',
-    nudge: '¿Qué puede hacer ahora que antes no podía?'
-  },
-  {
-    kind: 'Palabra',
-    source: 'Desconcierto / descon-cierto',
-    twist: 'En una ciudad donde todos afinan, alguien organiza el primer desconcierto.',
-    nudge: '¿Qué ocurre cuando la música deja de obedecer?'
-  },
-  {
-    kind: 'Expresión',
-    source: 'Se me ha ido el santo al cielo',
-    twist: 'Un santo se ha escapado al cielo y nadie sabe cómo traerlo de vuelta.',
-    nudge: '¿Quién emprende el rescate y qué pide el santo a cambio?'
-  },
-  {
-    kind: 'Expresión',
-    source: 'Estar en las nubes',
-    twist: 'Una persona descubre que las nubes son edificios habitados.',
-    nudge: '¿Qué vecino conoce allí y por qué no quiere bajar?'
-  },
-  {
-    kind: 'Expresión',
-    source: 'Tirar la casa por la ventana',
-    twist: 'Una casa sale volando por la ventana y aterriza en otro barrio.',
-    nudge: '¿A quién encuentra dentro y qué ha dejado atrás?'
-  },
-  {
-    kind: 'Interpretación',
-    source: '«Prohibido el paso»',
-    twist: 'Un cartel no prohíbe entrar: advierte de que el pasillo está pasando por algún sitio.',
-    nudge: '¿Adónde se dirige el pasillo y quién viaja dentro?'
-  },
-  {
-    kind: 'Interpretación',
-    source: '«Se alquila habitación con vistas»',
-    twist: 'La habitación tiene ojos y observa a quien se aloja en ella.',
-    nudge: '¿Qué secreto ha visto y por qué decide contarlo?'
-  },
-  {
-    kind: 'Interpretación',
-    source: '«Cuidado con el perro»',
-    twist: 'El perro lleva años cuidando de todo el vecindario.',
-    nudge: '¿De qué peligro protege a los vecinos?'
-  }
+  { kind: 'Palabra', source: '«Murciélago» → «Murcia-lago»', twist: 'En Murcia aparece cada noche un lago suspendido sobre los tejados. Al amanecer desaparece sin dejar una gota.', nudge: '¿Quién lo descubre y qué criatura llega con el agua?' },
+  { kind: 'Palabra', source: '«Mariposa» → «mar y posa»', twist: 'Una viajera del mar necesita encontrar un lugar donde posar sus alas antes de que suba la marea.', nudge: '¿Quién le ofrece refugio y qué precio le pide?' },
+  { kind: 'Palabra', source: '«Paraguas» → «para aguas»', twist: 'Un objeto misterioso tiene el poder de detener cualquier agua: lluvia, ríos e incluso lágrimas.', nudge: '¿Quién lo utiliza primero y qué consecuencia inesperada provoca?' },
+  { kind: 'Palabra', source: '«Desconcierto» → «des-con-cierto»', twist: 'En una ciudad donde todo está ensayado, alguien organiza un concierto en el que nadie sabe qué va a ocurrir.', nudge: '¿Qué instrumento rompe el orden y quién se atreve a seguirlo?' },
+  { kind: 'Palabra', source: '«Cartera» → «carta era»', twist: 'Una carta antigua resulta ser una era completa: dentro caben generaciones, cosechas y recuerdos.', nudge: '¿Quién abre la carta y qué época encuentra dentro?' },
+  { kind: 'Expresión', source: '«Estar en las nubes»', twist: 'Las nubes son edificios habitados y alguien lleva tanto tiempo viviendo allí que ha olvidado cómo se baja.', nudge: '¿Qué vecino conoce allí y qué le impide regresar?' },
+  { kind: 'Expresión', source: '«Meter la pata»', twist: 'Una persona mete literalmente la pata en un lugar donde no debería: al otro lado hay un mundo diminuto.', nudge: '¿Quién vive allí y cómo interpreta esa llegada?' },
+  { kind: 'Expresión', source: '«Dar calabazas»', twist: 'En una escuela extraña, las calabazas son premios que se entregan a quien se atreve a decir que no.', nudge: '¿Quién recibe la primera calabaza y por qué se convierte en noticia?' },
+  { kind: 'Expresión', source: '«Echar una mano»', twist: 'Una mano se separa de su dueño para ayudar a desconocidos, pero empieza a tomar decisiones por su cuenta.', nudge: '¿A quién ayuda primero y qué quiere a cambio?' },
+  { kind: 'Expresión', source: '«Dormirse en los laureles»', twist: 'Los laureles son árboles que susurran a quien duerme bajo ellos y le cuentan futuros posibles.', nudge: '¿Qué futuro escucha el protagonista y qué hace al despertar?' },
+  { kind: 'Interpretación', source: '«Se ruega silencio»', twist: 'Silencio es el nombre de una persona a la que todo el pueblo lleva años pidiendo que se arrodille.', nudge: '¿Por qué no se arrodilla y qué ocurre cuando por fin responde?' },
+  { kind: 'Interpretación', source: '«Salida de emergencia»', twist: 'La emergencia es una criatura que intenta salir del edificio y cada puerta la conduce a una habitación distinta.', nudge: '¿Quién decide ayudarla y qué sucede si consigue escapar?' },
+  { kind: 'Interpretación', source: '«Cuidado con el perro»', twist: 'El perro lleva años cuidando de todo el vecindario; el cartel es una advertencia para quien quiera hacerle daño.', nudge: '¿De qué peligro protege a los vecinos?' },
+  { kind: 'Interpretación', source: '«Se busca personal»', twist: 'Personal es el nombre de alguien que ha desaparecido y todos los carteles de la ciudad llevan su retrato.', nudge: '¿Quién lo busca y qué sabe esa persona que nadie más conoce?' },
+  { kind: 'Interpretación', source: '«Prohibido el paso»', twist: 'El pasillo no prohíbe que entren: está pasando por algún sitio y no puede detenerse.', nudge: '¿Adónde se dirige el pasillo y quién viaja dentro?' }
 ];
 
 const KINDS: TriggerKind[] = ['Palabra', 'Expresión', 'Interpretación'];
 
-const randomTrigger = (kind?: TriggerKind): CreativeTrigger => {
-  const options = kind ? TRIGGERS.filter((item) => item.kind === kind) : TRIGGERS;
+const randomTrigger = (kind?: TriggerKind, previousSource?: string): CreativeTrigger => {
+  const matching = kind ? TRIGGERS.filter((item) => item.kind === kind) : TRIGGERS;
+  const alternatives = matching.filter((item) => item.source !== previousSource);
+  const options = alternatives.length ? alternatives : matching;
   return options[Math.floor(Math.random() * options.length)];
 };
 
@@ -107,6 +71,7 @@ export const ErrorCreativeLab: React.FC<ErrorCreativeLabProps> = ({
   const [kind, setKind] = useState<TriggerKind | 'Aleatorio'>('Aleatorio');
   const [trigger, setTrigger] = useState<CreativeTrigger>(() => randomTrigger());
   const [ownTrigger, setOwnTrigger] = useState('');
+  const [ownKind, setOwnKind] = useState<TriggerKind>('Palabra');
   const [notice, setNotice] = useState('');
   const isMinimal = theme === 'minimal';
   const wordCount = useMemo(() => countWords(writingContent), [writingContent]);
@@ -123,23 +88,35 @@ export const ErrorCreativeLab: React.FC<ErrorCreativeLabProps> = ({
     : 'border border-stone-200 rounded-full hover:bg-stone-50';
 
   const drawAnother = () => {
-    setTrigger(randomTrigger(kind === 'Aleatorio' ? undefined : kind));
+    setTrigger(randomTrigger(kind === 'Aleatorio' ? undefined : kind, trigger.source));
     setNotice('');
   };
 
   const useOwnTrigger = () => {
     const value = ownTrigger.trim();
     if (!value) {
-      setNotice('Escribe una palabra, expresión o frase para transformarla.');
+      setNotice('Escribe primero tu palabra, expresión o interpretación.');
       return;
     }
-    setTrigger({
-      kind: 'Interpretación',
-      source: value,
-      twist: `En este mundo, «${value}» significa algo completamente distinto de lo que todos creen.`,
-      nudge: '¿Quién descubre el verdadero significado y qué cambia a partir de entonces?'
-    });
-    setNotice('Tu error ya tiene una puerta de entrada a la historia.');
+
+    const customPrompt: Record<TriggerKind, { twist: string; nudge: string }> = {
+      Palabra: {
+        twist: `Imagina que «${value}» se ha escrito, separado o escuchado de otra manera. Acepta esa nueva lectura como si fuera cierta.`,
+        nudge: '¿Qué lugar, objeto o criatura nace de esa nueva palabra?'
+      },
+      Expresión: {
+        twist: `Olvida el sentido figurado de «${value}»: en tu historia sucede exactamente lo que dicen sus palabras.`,
+        nudge: '¿Quién la toma al pie de la letra y qué consecuencias tiene?'
+      },
+      Interpretación: {
+        twist: `La lectura equivocada de «${value}» es la única explicación posible en este mundo.`,
+        nudge: '¿Quién descubre esa explicación y qué cambia a partir de entonces?'
+      }
+    };
+
+    setKind(ownKind);
+    setTrigger({ kind: ownKind, source: value, ...customPrompt[ownKind] });
+    setNotice('Tu disparador ya está listo. No lo corrijas: conviértelo en el motor de la historia.');
   };
 
   const handlePublish = () => {
@@ -159,12 +136,12 @@ export const ErrorCreativeLab: React.FC<ErrorCreativeLabProps> = ({
         <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-3 ${isMinimal ? 'text-[#0F5C52]' : 'text-indigo-600'}`}>
           Laboratorio de ideas · 5–10 min
         </p>
-        <h2 className={`${isMinimal ? 'font-editorial text-[34px] md:text-[46px] leading-tight' : 'text-4xl md:text-5xl font-bold'} mb-4 ${theme === 'modern' ? 'display text-indigo-600' : ''}`}>
+        <h2 className={`${getLabActivityTitleClass(theme)} mb-4`}>
           El error creativo
         </h2>
         <p className={`max-w-2xl mx-auto italic text-sm md:text-base leading-relaxed ${muted}`}>
-          Una errata, un malentendido o una lectura disparatada pueden ser el principio de una gran historia.
-          Aquí no corregimos el error: lo seguimos.
+          Elige una errata, una expresión tomada al pie de la letra o un mensaje mal interpretado.
+          No corrijas el error: acepta su nueva lógica y conviértela en una historia breve.
         </p>
       </header>
 
@@ -173,7 +150,7 @@ export const ErrorCreativeLab: React.FC<ErrorCreativeLabProps> = ({
           <span className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${isMinimal ? 'bg-[#EDE8DF]' : 'bg-indigo-50'}`}>1</span>
           <div>
             <h3 id="error-step-one" className="font-bold text-lg">Provoca el error</h3>
-            <p className={`text-xs ${muted}`}>Elige de dónde va a salir la chispa.</p>
+            <p className={`text-[11pt] leading-relaxed ${muted}`}>Escoge un disparador al azar o limita el tipo de error. Después, dale una consecuencia narrativa.</p>
           </div>
         </div>
 
@@ -185,7 +162,7 @@ export const ErrorCreativeLab: React.FC<ErrorCreativeLabProps> = ({
               aria-pressed={kind === option}
               onClick={() => {
                 setKind(option);
-                setTrigger(randomTrigger(option === 'Aleatorio' ? undefined : option));
+                setTrigger(randomTrigger(option === 'Aleatorio' ? undefined : option, trigger.source));
                 setNotice('');
               }}
               className={`px-4 py-2 text-xs font-bold transition-colors ${kind === option
@@ -219,23 +196,38 @@ export const ErrorCreativeLab: React.FC<ErrorCreativeLabProps> = ({
           <span className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${isMinimal ? 'bg-[#EDE8DF]' : 'bg-indigo-50'}`}>2</span>
           <div>
             <h3 id="error-step-two" className="font-bold text-lg">Trae tu propio error</h3>
-            <p className={`text-xs ${muted}`}>Una palabra que se te escapó, una frase oída a medias, un cartel mal leído…</p>
+            <p className={`text-[11pt] leading-relaxed ${muted}`}>Escribe una errata, algo que oíste mal o una frase que interpretaste de otra manera.</p>
           </div>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <label className="sr-only" htmlFor="error-own-trigger">Tu palabra, expresión o interpretación</label>
-          <input
-            id="error-own-trigger"
-            type="text"
-            value={ownTrigger}
-            onChange={(event) => setOwnTrigger(event.target.value)}
-            onKeyDown={(event) => { if (event.key === 'Enter') useOwnTrigger(); }}
-            maxLength={100}
-            placeholder="Ej.: Se venden sueños usados"
-            className={`flex-1 min-w-0 px-4 py-3 border focus:ring-2 focus:ring-offset-1 ${isMinimal ? 'border-[#C8C2B4] bg-[#F7F4EE] focus:ring-[#C1441B]' : 'border-stone-200 focus:ring-indigo-400'}`}
-          />
-          <button type="button" onClick={useOwnTrigger} className={`inline-flex items-center justify-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider ${isMinimal ? 'bg-[#0F5C52] text-white rounded-[2px]' : 'bg-indigo-600 text-white rounded-full'}`}>
-            <WandSparkles className="w-4 h-4" /> Convertir
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-3 mb-3">
+          <div className="min-w-0">
+            <label className="block mb-2 text-[10px] font-bold uppercase tracking-widest" htmlFor="error-own-kind">Tipo de error</label>
+            <select
+              id="error-own-kind"
+              value={ownKind}
+              onChange={(event) => setOwnKind(event.target.value as TriggerKind)}
+              className={`w-full px-4 py-3 border text-[11pt] focus:ring-2 focus:ring-offset-1 ${isMinimal ? 'border-[#C8C2B4] bg-[#F7F4EE] focus:ring-[#C1441B]' : 'border-stone-200 bg-white focus:ring-indigo-400'}`}
+            >
+              {KINDS.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </div>
+          <div className="min-w-0 sm:col-span-2">
+            <label className="sr-only" htmlFor="error-own-trigger">Tu palabra, expresión o interpretación</label>
+            <input
+              id="error-own-trigger"
+              type="text"
+              value={ownTrigger}
+              onChange={(event) => setOwnTrigger(event.target.value)}
+              onKeyDown={(event) => { if (event.key === 'Enter') useOwnTrigger(); }}
+              maxLength={140}
+              aria-describedby="error-own-help"
+              placeholder="Ej.: Se venden sueños usados"
+              className={`w-full min-w-0 px-4 py-3 border text-[11pt] focus:ring-2 focus:ring-offset-1 ${isMinimal ? 'border-[#C8C2B4] bg-[#F7F4EE] focus:ring-[#C1441B]' : 'border-stone-200 focus:ring-indigo-400'}`}
+            />
+            <p id="error-own-help" className={`mt-2 text-xs ${muted}`}>Escribe el error tal como lo has visto, oído o entendido.</p>
+          </div>
+          <button type="button" onClick={useOwnTrigger} className={`sm:col-span-2 inline-flex items-center justify-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider ${isMinimal ? 'bg-[#0F5C52] text-white rounded-[2px]' : 'bg-indigo-600 text-white rounded-full'}`}>
+            <WandSparkles className="w-4 h-4" /> Convertir mi error en disparador
           </button>
         </div>
         {notice && <p className="mt-3 text-xs" role="status">{notice}</p>}
@@ -246,7 +238,7 @@ export const ErrorCreativeLab: React.FC<ErrorCreativeLabProps> = ({
           <span className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${isMinimal ? 'bg-[#EDE8DF]' : 'bg-indigo-50'}`}>3</span>
           <div>
             <h3 id="error-step-three" className="font-bold text-lg">Sigue el error hasta el final</h3>
-            <p className={`text-xs ${muted}`}>Escribe una microhistoria de entre 80 y 120 palabras.</p>
+            <p className={`text-[11pt] leading-relaxed ${muted}`}>Escribe una microhistoria breve: recomendamos entre 80 y 120 palabras.</p>
           </div>
         </div>
 
@@ -257,7 +249,7 @@ export const ErrorCreativeLab: React.FC<ErrorCreativeLabProps> = ({
 
         <div className="flex items-center justify-between mb-2">
           <label htmlFor="writing-textarea" className="text-[10px] font-bold uppercase tracking-widest">Tu microhistoria</label>
-          <span className={`text-xs font-bold tabular-nums ${inRange ? 'text-[#0F5C52]' : muted}`} aria-live="polite">{wordCount} / 80–120 palabras</span>
+          <span className={`text-xs font-bold tabular-nums ${inRange ? 'text-[#0F5C52]' : muted}`} aria-live="polite">{wordCount} / 80–120 palabras recomendadas</span>
         </div>
         <WritingArea
           user={user}
@@ -274,7 +266,7 @@ export const ErrorCreativeLab: React.FC<ErrorCreativeLabProps> = ({
           maxWidth="100%"
         />
         <p className={`mt-3 text-xs italic ${muted}`}>
-          No hace falta llegar a la perfección: busca un personaje, un conflicto y un giro. La recomendación es orientativa; puedes publicar tu texto cuando esté listo.
+          La extensión es orientativa, no un límite. Busca un personaje, un conflicto y un giro; cuando tu historia esté lista, puedes enviarla a moderación.
         </p>
       </section>
     </div>

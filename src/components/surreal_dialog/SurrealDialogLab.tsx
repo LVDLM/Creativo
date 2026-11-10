@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { HelpCircle, RefreshCw, Sparkles } from 'lucide-react';
-import HelpModal from './HelpModal';
+import { getLabActivityTitleClass } from '../labActivityStyles';
+import { RefreshCw } from 'lucide-react';
 import RouletteWheel from './RouletteWheel';
 import { WORD_LIST } from './constants';
 import { motion } from 'framer-motion';
@@ -46,7 +46,6 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [finishedWheels, setFinishedWheels] = useState(0);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
     const shuffled = [...WORD_LIST].sort(() => 0.5 - Math.random());
@@ -87,26 +86,23 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
     if (isMinimal) {
       return (
         <div className="flex flex-col items-center sm:items-start select-none">
-          <h1 className="flex flex-wrap justify-center sm:justify-start gap-x-1 md:gap-x-2">
-            <span className="font-editorial text-[32px] md:text-[52px] text-[#1C1510] tracking-tight">
+          <h1 className={`${getLabActivityTitleClass(theme)} flex flex-wrap justify-center sm:justify-start gap-x-1 md:gap-x-2`}>
+            <span className="text-[#1C1510]">
               Diálogos Surrealistas
             </span>
           </h1>
-          <p className="text-[10px] md:text-xs text-[#5A4A3A] uppercase tracking-[0.2em] font-bold mt-1 ml-1 [font-variant:small-caps]">
-            Laboratorio Literario
-          </p>
         </div>
       );
     }
 
     return (
       <div className="flex flex-col items-center sm:items-start select-none [perspective:1000px]">
-        <h1 className="flex flex-wrap justify-center sm:justify-start gap-x-1 md:gap-x-2">
+        <h1 className={`${getLabActivityTitleClass(theme)} flex flex-wrap justify-center sm:justify-start gap-x-1 md:gap-x-2`}>
           <span className="flex">
             {word1.map((char, i) => (
               <span
                 key={`w1-${i}`}
-                className={`inline-block font-black text-2xl md:text-5xl text-slate-900 ${getSurrealClass(i)}`}
+                className={`inline-block text-slate-900 ${getSurrealClass(i)}`}
                 style={{
                   animationDelay: `${i * 0.2}s`,
                   transformStyle: 'preserve-3d',
@@ -122,7 +118,7 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
             {word2.map((char, i) => (
               <span
                 key={`w2-${i}`}
-                className={`inline-block font-black text-2xl md:text-5xl text-indigo-600 ${getSurrealClass(i + 8)}`}
+                className={`inline-block text-indigo-600 ${getSurrealClass(i + 8)}`}
                 style={{
                   animationDelay: `${(i + 5) * 0.3}s`,
                   transformStyle: 'preserve-3d',
@@ -135,15 +131,12 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
             ))}
           </span>
         </h1>
-        <p className="text-[10px] md:text-sm text-indigo-500/70 uppercase tracking-[0.3em] font-black italic mt-2 ml-1">
-          Laboratorio Literario
-        </p>
       </div>
     );
   };
 
   return (
-    <div className={`relative p-4 md:p-8 max-w-full overflow-hidden ${isMinimal ? 'font-body text-[#1C1510]' : ''}`}>
+    <div className={`relative max-w-4xl mx-auto p-4 md:p-6 overflow-hidden ${isMinimal ? 'font-body text-[#1C1510]' : ''}`}>
       {/* Decorative Bubbles */}
       {!isMinimal && (
         <>
@@ -167,33 +160,17 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
       />
 
       {/* Header */}
-      <header className="w-full max-w-5xl flex flex-col sm:flex-row justify-between items-center mb-8 md:mb-16 gap-6 z-10 relative">
-        <div className="flex items-center gap-4 md:gap-6">
-          <div className={`p-3 md:p-5 border-2 border-black transform -rotate-3 hover:rotate-0 transition-transform cursor-pointer group ${
-            isMinimal ? 'bg-[#F7F4EE] rounded-[2px]' : 'bg-indigo-600 rounded-[2rem] md:rounded-[2.5rem] shadow-[4px_4px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_rgba(0,0,0,1)]'
-          }`}>
-            <Sparkles className={`w-6 h-6 md:w-10 md:h-10 group-hover:scale-125 transition-transform ${isMinimal ? 'text-[#1C1510]' : 'text-white'}`} />
-          </div>
-          {renderSurrealTitle()}
-        </div>
-
-        <button 
-          onClick={() => setIsHelpOpen(true)}
-          className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 transition-all border-2 border-black ${
-            isMinimal 
-              ? 'bg-white hover:bg-[#F7F4EE] rounded-[2px] shadow-sm' 
-              : 'bg-white hover:bg-slate-50 rounded-2xl shadow-[4px_4px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1'
-          }`}
-        >
-          <span className={`text-sm font-black uppercase tracking-wider ${isMinimal ? 'text-[#1C1510] [font-variant:small-caps]' : 'text-slate-900'}`}>Ayuda</span>
-          <HelpCircle className={`w-5 h-5 ${isMinimal ? 'text-[#5A4A3A]' : 'text-indigo-600'}`} />
-        </button>
+      <header className="w-full max-w-4xl flex flex-col items-center text-center mb-10 md:mb-12 gap-3 z-10 relative">
+        {renderSurrealTitle()}
+        <p className={`max-w-2xl text-sm md:text-base leading-relaxed italic ${isMinimal ? 'text-[#5A5040]' : 'opacity-60'}`}>
+          Imagina situaciones surrealistas y crea conversaciones imposibles entre objetos o conceptos.
+        </p>
       </header>
 
       {/* Main Content */}
-      <div className="w-full max-w-5xl mx-auto flex flex-col items-center z-10 relative">
+      <div className="w-full max-w-4xl mx-auto flex flex-col items-center z-10 relative">
         {/* Controls */}
-        <div className={`p-6 md:p-8 border-2 border-black w-full max-w-2xl mb-8 md:mb-16 ${
+        <div className={`p-6 md:p-8 border-2 border-black w-full max-w-2xl mb-8 ${
           isMinimal 
             ? 'bg-white rounded-[2px] shadow-sm' 
             : 'bg-white rounded-[2.5rem] shadow-[10px_10px_0px_rgba(99,102,241,0.2)]'
@@ -248,7 +225,7 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
         </div>
 
         {/* Wheels Container */}
-        <div className="flex flex-wrap justify-center gap-x-4 md:gap-x-8 lg:gap-x-12 gap-y-6 md:gap-y-10 mb-12 md:mb-20 w-full max-w-5xl">
+        <div className="flex flex-wrap justify-center gap-x-4 md:gap-x-8 lg:gap-x-12 gap-y-6 md:gap-y-10 mb-16 w-full max-w-4xl">
           {selectedWords.map((word, idx) => (
             <RouletteWheel 
               key={idx}
@@ -279,7 +256,6 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
         />
       </div>
 
-      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes float {

@@ -12,7 +12,8 @@ import {
   deleteDoc,
   updateDoc,
   setDoc,
-  increment
+  increment,
+  writeBatch
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db, loginWithGoogle, logout } from './firebase';
@@ -22,6 +23,9 @@ import { MicroStoryLab } from './components/MicroStoryLab';
 import { WeatherActionLab } from './components/WeatherActionLab';
 import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
 import { PoetryLab } from './components/PoetryLab';
+import { LipogramLab } from './components/LipogramLab';
+import { BinomioFantasticoLab } from './components/BinomioFantasticoLab';
+import { HipotesisFantasticaLab } from './components/HipotesisFantasticaLab';
 import { ErrorCreativeLab } from './components/ErrorCreativeLab';
 import { WritingArea } from './components/WritingArea';
 import { TimeChallenge } from './components/TimeChallenge';
@@ -55,6 +59,7 @@ import {
   Search,
   Swords,
   Sun,
+  Lightbulb,
   Sparkles,
   Trash2,
   Edit3,
@@ -77,7 +82,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 // Icon mapping
 const ICON_MAP: Record<string, any> = {
-  Zap, Bus, Train, Type, Minimize2, Layers, Shuffle, Dices, Ghost, Search, Swords, Sun, Sparkles, Clock, BarChart2, RefreshCw, Calendar, Layout, Palette, Sparkle, Heart
+  Zap, Bus, Train, Type, Minimize2, Layers, Shuffle, Dices, Ghost, Search, Swords, Sun, Lightbulb, Sparkles, Clock, BarChart2, RefreshCw, Calendar, Layout, Palette, Sparkle, Heart
 };
 
 const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
@@ -196,19 +201,61 @@ export default function App() {
       tags: ['Laboratorio', 'Poesía', '10 min']
     },
     {
-      id: 'lab-error-creativo',
-      title: 'El error creativo',
-      description: 'Convierte una errata, un malentendido o una interpretación inesperada en el comienzo de una microhistoria.',
-      difficulty: 'Fácil',
+      id: 'lab-lipograma',
+      title: 'El lipograma',
+      description: 'Escribe un texto sin utilizar una letra. Elige cuál o deja que salga al azar y valida tu texto antes de publicarlo.',
+      difficulty: 'Variable',
       duration: '5–10 min',
       category: 'Laboratorio',
-      icon: 'Sparkles',
-      example: 'Una palabra mal escrita abre la puerta a un mundo que no debería existir.',
+      icon: 'Type',
+      example: 'Un texto que consigue contar algo sin utilizar la letra prohibida.',
       isLab: true,
-      labId: 'errorcreativo',
-      tags: ['Laboratorio', 'Palabras', 'Microhistorias']
+      labId: 'lipograma',
+      tags: ['Laboratorio', 'Letras', 'Restricciones']
     }
   ];
+
+  LAB_ACTIVITIES.push({
+    id: 'lab-binomio-fantastico',
+    title: 'El binomio fantástico',
+    description: 'Construye una historia a partir de dos palabras inesperadas. Cámbialas al azar hasta encontrar una combinación que te inspire.',
+    difficulty: 'Fácil',
+    duration: '10–15 min',
+    category: 'Laboratorio',
+    icon: 'Shuffle',
+    example: 'Un gusano y un radiador se encuentran una noche de invierno.',
+    isLab: true,
+    labId: 'binomiofantastico',
+    tags: ['Laboratorio', 'Palabras', 'Narrativa']
+  });
+
+  LAB_ACTIVITIES.push({
+    id: 'lab-hipotesis-fantastica',
+    title: 'La hipótesis fantástica',
+    description: 'Responde a una pregunta inesperada o propón una hipótesis para inspirar a otros escritores.',
+    difficulty: 'Fácil',
+    duration: '10–15 min',
+    category: 'Laboratorio',
+    icon: 'Lightbulb',
+    example: '¿Qué pasaría si los recuerdos pudieran intercambiarse?',
+    isLab: true,
+    labId: 'hipotesisfantastica',
+    tags: ['Laboratorio', 'Imaginación', 'Narrativa']
+  });
+
+  LAB_ACTIVITIES.push({
+    id: 'lab-error-creativo',
+    title: 'El error creativo',
+    description: 'Convierte una errata, un malentendido o una lectura literal en una microhistoria de 80–120 palabras.',
+    difficulty: 'Fácil',
+    duration: '5–10 min',
+    category: 'Laboratorio',
+    icon: 'Sparkles',
+    example: '«Murcia-lago»: un lago secreto aparece cada noche sobre los tejados.',
+    isLab: true,
+    labId: 'errorcreativo',
+    tags: ['Laboratorio', 'Palabras', 'Imaginación']
+  });
 
   const ALL_ACTIVITIES = [...LAB_ACTIVITIES, ...CHALLENGES];
 
@@ -251,7 +298,7 @@ export default function App() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [view, activeChallenge]);
+  }, [view, activeChallenge, activeLabTool]);
 
   useEffect(() => {
     if (!user) {
@@ -371,7 +418,7 @@ export default function App() {
     testConnection();
   }, []);
 
-  const handlePublish = async (labToolId?: string, contentOverride?: string) => {
+  const handlePublish = async (labToolId?: string, contentOverride?: string, submissionType?: 'story' | 'hypothesis', promptContext?: string) => {
     const finalContent = contentOverride || writingContent;
     if ((!activeChallenge && !labToolId) || !finalContent.trim()) return;
     setIsPublishing(true);
@@ -383,12 +430,13 @@ export default function App() {
       try {
         await addDoc(collection(db, path), {
           challengeId: labToolId || activeChallenge?.id,
-          subTitle: pontePrompt?.title || null,
+          subTitle: promptContext || pontePrompt?.title || null,
           authorId: user ? user.uid : 'guest',
           authorName: pseudonym.trim() || (user ? user.displayName : 'Invitado') || 'Invitado',
           content: finalContent,
           createdAt: serverTimestamp(),
-          isModerated: !isGuest, // Published directly if logged in, otherwise needs moderation
+          isModerated: submissionType ? false : !isGuest, // Las aportaciones de esta actividad siempre pasan por moderación
+          ...(submissionType ? { submissionType } : {}),
           status: 'pending',
           isGuest: isGuest,
           likesCount: 0
@@ -400,7 +448,7 @@ export default function App() {
       setPublishSuccess(true);
       setTimeout(() => {
         setPublishSuccess(false);
-        if (!isGuest) setView('gallery');
+        if (!isGuest) setView(submissionType ? 'lab' : 'gallery');
         setActiveChallenge(null);
         setActiveLabTool(null);
         setWritingContent('');
@@ -1097,7 +1145,27 @@ export default function App() {
   const handleApprove = async (pubId: string) => {
     if (!isAdmin) return;
     try {
-      await updateDoc(doc(db, 'publications', pubId), {
+      const publicationRef = doc(db, 'publications', pubId);
+      const publicationSnapshot = await getDocFromServer(publicationRef);
+      if (!publicationSnapshot.exists()) return;
+      const publication = publicationSnapshot.data();
+
+      if (publication.submissionType === 'hypothesis') {
+        // La propuesta se incorpora al banco y sale de la cola en una única operación atómica.
+        const batch = writeBatch(db);
+        batch.set(doc(db, 'hypotheses', pubId), {
+          content: publication.content,
+          status: 'approved',
+          createdAt: publication.createdAt || serverTimestamp(),
+          createdBy: publication.authorId,
+          sourcePublicationId: pubId
+        });
+        batch.delete(publicationRef);
+        await batch.commit();
+        return;
+      }
+
+      await updateDoc(publicationRef, {
         status: 'approved',
         isModerated: true
       });
@@ -1163,7 +1231,7 @@ export default function App() {
   };
 
   const renderGallery = () => {
-    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says', 'lab-error-creativo'];
+    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says', 'lab-lipograma', 'lab-binomio-fantastico', 'lab-hipotesis-fantastica', 'lab-error-creativo'];
     const isMinimal = theme === 'minimal';
     
     // Determine type for filtering
@@ -1286,7 +1354,10 @@ export default function App() {
                   'lab-micro-story': 'Microhistorias',
                   'lab-weather-action': 'Tiempo y Acciones',
                   'lab-surreal-dialog': 'Diálogos Surrealistas',
-                  'lab-poetry-says': 'En poesía se dice...'
+                  'lab-poetry-says': 'En poesía se dice...',
+                  'lab-binomio-fantastico': 'El binomio fantástico',
+                  'lab-hipotesis-fantastica': 'La hipótesis fantástica',
+                  'lab-error-creativo': 'El error creativo'
                 };
                 const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
                 const dotColor = getCategoryColor(pub.challengeId);
@@ -1304,7 +1375,7 @@ export default function App() {
                     <div className="flex items-center gap-2 mb-4">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
                       <span className="text-[10px] uppercase tracking-widest text-amber-700 font-bold">
-                        Pendiente: {challengeTitle}
+                        {pub.submissionType === 'hypothesis' ? 'Nueva hipótesis' : pub.submissionType === 'story' ? `Texto para publicar · ${challengeTitle}` : `Pendiente: ${challengeTitle}`}
                       </span>
                     </div>
 
@@ -1350,7 +1421,8 @@ export default function App() {
                 'lab-micro-story': 'Microhistorias',
                 'lab-weather-action': 'Tiempo y Acciones',
                 'lab-surreal-dialog': 'Diálogos Surrealistas',
-                'lab-poetry-says': 'En poesía se dice...'
+                'lab-poetry-says': 'En poesía se dice...',
+                'lab-error-creativo': 'El error creativo'
               };
               const typeLabel = getPubType(pub) === 'laboratorio' ? 'Laboratorio' : getPubType(pub) === 'simon' ? 'Simón dice...' : 'Reto';
               const challengeTitle = pub.subTitle || challenge?.title || labToolNames[pub.challengeId] || 'Desconocido';
@@ -1528,6 +1600,161 @@ export default function App() {
   const renderLab = () => {
     const isMinimal = theme === 'minimal';
 
+    if (activeLabTool === 'errorcreativo') {
+      return (
+        <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          <div className="max-w-6xl mx-auto px-6 py-12">
+            <button
+              onClick={() => {
+                setActiveLabTool(null);
+                setWritingContent('');
+              }}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
+            </button>
+            <ErrorCreativeLab
+              theme={theme}
+              user={user}
+              writingContent={writingContent}
+              setWritingContent={setWritingContent}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
+              onPublish={(content) => handlePublish('lab-error-creativo', content)}
+              isPublishing={isPublishing}
+              publishSuccess={publishSuccess}
+              onLogin={handleLogin}
+            />
+            <div className="max-w-4xl mx-auto">
+              <ExamplesCarousel
+                challengeId="lab-error-creativo"
+                publications={publications}
+                theme={theme}
+                showExamples={showExamples}
+                setShowExamples={setShowExamples}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeLabTool === 'hipotesisfantastica') {
+      return (
+        <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          <div className="max-w-6xl mx-auto px-6 py-12">
+            <button
+              onClick={() => {
+                setActiveLabTool(null);
+                setWritingContent('');
+              }}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
+            </button>
+            <HipotesisFantasticaLab
+              theme={theme}
+              user={user}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
+              onPublishStory={(content, hypothesis) => handlePublish('lab-hipotesis-fantastica', content, 'story', hypothesis)}
+              onSubmitHypothesis={(hypothesis) => handlePublish('lab-hipotesis-fantastica', hypothesis, 'hypothesis')}
+              isPublishing={isPublishing}
+              publishSuccess={publishSuccess}
+              onLogin={handleLogin}
+            />
+            <div className="max-w-4xl mx-auto">
+              <ExamplesCarousel
+                challengeId="lab-hipotesis-fantastica"
+                publications={publications}
+                theme={theme}
+                showExamples={showExamples}
+                setShowExamples={setShowExamples}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeLabTool === 'binomiofantastico') {
+      return (
+        <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          <div className="max-w-6xl mx-auto px-6 py-12">
+            <button
+              onClick={() => {
+                setActiveLabTool(null);
+                setWritingContent('');
+              }}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
+            </button>
+            <BinomioFantasticoLab
+              theme={theme}
+              user={user}
+              writingContent={writingContent}
+              setWritingContent={setWritingContent}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
+              onPublish={(content, wordPair) => handlePublish('lab-binomio-fantastico', content, undefined, wordPair ? `El binomio fantástico (${wordPair})` : 'El binomio fantástico')}
+              isPublishing={isPublishing}
+              publishSuccess={publishSuccess}
+              onLogin={handleLogin}
+            />
+            <div className="max-w-4xl mx-auto">
+              <ExamplesCarousel
+                challengeId="lab-binomio-fantastico"
+                publications={publications}
+                theme={theme}
+                showExamples={showExamples}
+                setShowExamples={setShowExamples}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeLabTool === 'lipograma') {
+      return (
+        <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          <div className="max-w-6xl mx-auto px-6 py-12">
+            <button
+              onClick={() => {
+                setActiveLabTool(null);
+                setWritingContent('');
+              }}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
+            </button>
+            <LipogramLab
+              theme={theme}
+              user={user}
+              writingContent={writingContent}
+              setWritingContent={setWritingContent}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
+              onPublish={(content) => handlePublish('lab-lipograma', content)}
+              isPublishing={isPublishing}
+              publishSuccess={publishSuccess}
+              onLogin={handleLogin}
+            />
+            <div className="max-w-4xl mx-auto">
+              <ExamplesCarousel
+                challengeId="lab-lipograma"
+                publications={publications}
+                theme={theme}
+                showExamples={showExamples}
+                setShowExamples={setShowExamples}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (activeLabTool === 'microstory') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
@@ -1638,45 +1865,6 @@ export default function App() {
                 theme={theme} 
                 showExamples={showExamples} 
                 setShowExamples={setShowExamples} 
-              />
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    if (activeLabTool === 'errorcreativo') {
-      return (
-        <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
-          <div className="max-w-6xl mx-auto px-6 py-12">
-            <button
-              onClick={() => {
-                setActiveLabTool(null);
-                setWritingContent('');
-              }}
-              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
-            >
-              <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
-            </button>
-            <ErrorCreativeLab
-              theme={theme}
-              user={user}
-              writingContent={writingContent}
-              setWritingContent={setWritingContent}
-              pseudonym={pseudonym}
-              setPseudonym={setPseudonym}
-              onPublish={(content) => handlePublish('lab-error-creativo', content)}
-              isPublishing={isPublishing}
-              publishSuccess={publishSuccess}
-              onLogin={handleLogin}
-            />
-            <div className="max-w-4xl mx-auto">
-              <ExamplesCarousel
-                challengeId="lab-error-creativo"
-                publications={publications}
-                theme={theme}
-                showExamples={showExamples}
-                setShowExamples={setShowExamples}
               />
             </div>
           </div>
@@ -1798,14 +1986,44 @@ export default function App() {
 
             <motion.div
               whileHover={{ y: -5 }}
-              onClick={() => setActiveLabTool('errorcreativo')}
+              onClick={() => setActiveLabTool('lipograma')}
               className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] hover:border-[#8F8E88]' : 'card'} p-10 flex flex-col items-center text-center group cursor-pointer transition-all`}
             >
               <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
-                <Sparkles className="w-10 h-10" />
+                <Type className="w-10 h-10" />
               </div>
-              <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>El error creativo</h3>
-              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Convierte una errata, un malentendido o una lectura inesperada en una historia.</p>
+              <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>El lipograma</h3>
+              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Escribe sin una letra. Elige cuál o deja que la actividad la escoja y comprueba tu texto antes de publicarlo.</p>
+              <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
+                Abrir Herramienta
+              </button>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -5 }}
+              onClick={() => setActiveLabTool('binomiofantastico')}
+              className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] hover:border-[#8F8E88]' : 'card'} p-10 flex flex-col items-center text-center group cursor-pointer transition-all`}
+            >
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+                <Shuffle className="w-10 h-10" />
+              </div>
+              <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>El binomio fantástico</h3>
+              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Une dos palabras inesperadas y conviértelas en una historia. Puedes cambiar cada palabra o generar una pareja nueva.</p>
+              <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
+                Abrir Herramienta
+              </button>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -5 }}
+              onClick={() => setActiveLabTool('hipotesisfantastica')}
+              className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] hover:border-[#8F8E88]' : 'card'} p-10 flex flex-col items-center text-center group cursor-pointer transition-all`}
+            >
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+                <Lightbulb className="w-10 h-10" />
+              </div>
+              <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>La hipótesis fantástica</h3>
+              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Responde a una pregunta inesperada o propón una hipótesis para inspirar a otros escritores.</p>
               <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
                 Abrir Herramienta
               </button>
