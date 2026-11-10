@@ -931,152 +931,52 @@ export default function App() {
   const renderChallenge = () => {
     if (!activeChallenge) return null;
     const isPonte = activeChallenge.id === 'ponte-si-puedes';
-
-    if (theme === 'minimal') {
-      return (
-        <div className="bg-[#F7F4EE] min-h-screen font-body text-[#1C1510]">
-          <div className="max-w-6xl mx-auto px-6 py-16">
-            <button 
-              onClick={() => {
-                setView(previousView || (activeChallenge.category === 'Simón dice...' ? 'simon' : 'home'));
-                setPontePrompt(null);
-              }}
-              className="mb-12 text-[#5A4A3A] hover:text-[#1C1510] flex items-center gap-2 font-bold text-[11px] uppercase tracking-[0.12em] transition-colors [font-variant:small-caps]"
-            >
-              ← Volver
-            </button>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-              <div className="lg:col-span-4">
-                <div className="sticky top-32">
-                  <div className="flex items-center gap-3 mb-6">
-                    <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#EDE8DF] rounded-[2px] text-[#5A4A3A]">
-                      {activeChallenge.difficulty}
-                    </span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#EDE8DF] rounded-[2px] text-[#5A4A3A] flex items-center gap-1">
-                      <Clock className="w-2.5 h-2.5" /> {activeChallenge.duration}
-                    </span>
-                  </div>
-                  <h2 className="font-editorial text-[42px] font-bold leading-[1.1] mb-6 tracking-[-0.01em]">
-                    {isPonte && pontePrompt ? pontePrompt.title : activeChallenge.title}
-                  </h2>
-                  <p className="text-[#5A5040] text-[15px] leading-[1.75] mb-8">
-                    {isPonte && pontePrompt ? pontePrompt.description : activeChallenge.description}
-                  </p>
-                  
-                  {isPonte && (
-                    <button 
-                      onClick={() => {
-                        const random = PONTE_SUB_PROMPTS[Math.floor(Math.random() * PONTE_SUB_PROMPTS.length)];
-                        setPontePrompt(random);
-                      }}
-                      className="w-full flex justify-center items-center gap-2 bg-[#1C1510] text-[#F7F4EE] px-6 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em] hover:opacity-90 transition-all mb-8"
-                    >
-                      <RefreshCw className="w-4 h-4" /> Aleatorizar planteamiento
-                    </button>
-                  )}
-
-                  <div className="bg-white p-8 rounded-[2px] border border-[#E8E6E0] shadow-sm">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#5A4A3A] mb-4 [font-variant:small-caps]">
-                      Inspiración
-                    </p>
-                    <p className="text-[#1C1510] italic leading-[1.6] whitespace-pre-line font-body text-[15px]">
-                      "{isPonte && pontePrompt?.example ? pontePrompt.example : activeChallenge.example}"
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-8">
-                {(!isPonte || pontePrompt) && (
-                  <WritingArea 
-                    user={user}
-                    writingContent={writingContent}
-                    setWritingContent={setWritingContent}
-                    pseudonym={pseudonym}
-                    setPseudonym={setPseudonym}
-                    onPublish={() => handlePublish()}
-                    isPublishing={isPublishing}
-                    publishSuccess={publishSuccess}
-                    onLogin={handleLogin}
-                    theme={theme}
-                    maxWidth={activeChallenge.id === 'de-una-palabra-un-texto' ? '400px' : undefined}
-                  />
-                )}
-                
-                <div className="mt-12">
-                  {/* Moved out of here */}
-                </div>
-              </div>
-            </div>
-            <ExamplesCarousel 
-              challengeId={activeChallenge.id} 
-              publications={publications} 
-              theme={theme} 
-              showExamples={showExamples} 
-              setShowExamples={setShowExamples} 
-            />
-          </div>
-        </div>
-      );
-    }
+    const title = isPonte && pontePrompt ? pontePrompt.title : activeChallenge.title;
+    const description = isPonte && pontePrompt ? pontePrompt.description : activeChallenge.description;
+    const example = isPonte && pontePrompt?.example ? pontePrompt.example : activeChallenge.example;
 
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <button 
-          onClick={() => {
-            setView(previousView || (activeChallenge.category === 'Simón dice...' ? 'simon' : 'home'));
-            setPontePrompt(null);
-          }}
-          className="mb-8 text-stone-500 hover:text-stone-800 flex items-center transition-colors"
-        >
-          ← Volver
-        </button>
+      <div className={`min-h-screen ${theme === 'minimal' ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+        <div className="max-w-4xl mx-auto px-6 py-12 md:py-16">
+          <button
+            onClick={() => {
+              setView(previousView || (activeChallenge.category === 'Simón dice...' ? 'simon' : 'home'));
+              setPontePrompt(null);
+            }}
+            className={`mb-8 flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest transition-colors ${theme === 'minimal' ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'text-stone-500 hover:text-stone-800'}`}
+          >
+            ← Volver
+          </button>
 
-        <div className="card p-8 md:p-12 mb-8">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
-              {React.createElement(ICON_MAP[isPonte && pontePrompt ? pontePrompt.icon : (activeChallenge.icon || 'PenTool')], { className: "w-8 h-8 text-stone-700" })}
+          <header className="mb-8">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#5A4A3A]">{activeChallenge.category}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#8F8E88]">{activeChallenge.difficulty} · {activeChallenge.duration}</span>
             </div>
-            <div>
-              <span className="text-xs uppercase tracking-widest text-stone-400 font-bold">{activeChallenge.category}</span>
-              <h2 className="text-4xl font-bold">{isPonte && pontePrompt ? pontePrompt.title : activeChallenge.title}</h2>
-            </div>
-          </div>
+            <h1 className={`font-editorial font-bold leading-tight tracking-tight mb-4 ${theme === 'minimal' ? 'text-[38px] md:text-[48px]' : 'text-4xl md:text-5xl'}`}>
+              {title}
+            </h1>
+            <p className={`max-w-3xl text-base md:text-lg leading-relaxed ${theme === 'minimal' ? 'text-[#5A5040]' : 'text-stone-600'}`}>
+              {description}
+            </p>
+          </header>
 
-          <div className="prose prose-stone max-w-none mb-8">
-            <p className="text-xl leading-relaxed text-stone-700">{isPonte && pontePrompt ? pontePrompt.description : activeChallenge.description}</p>
-            
-            {isPonte && (
-              <button 
+          {isPonte && (
+            <div className="mb-8">
+              <button
                 onClick={() => {
                   const random = PONTE_SUB_PROMPTS[Math.floor(Math.random() * PONTE_SUB_PROMPTS.length)];
                   setPontePrompt(random);
                 }}
-                className="mt-4 flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-full font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+                className={`inline-flex items-center gap-2 px-6 py-3 font-bold text-xs tracking-wider transition-all ${theme === 'minimal' ? 'bg-[#1C1510] text-[#F7F4EE] rounded-[2px] hover:opacity-90' : 'bg-indigo-600 text-white rounded-full hover:bg-indigo-700'}`}
               >
-                <Shuffle className="w-5 h-5" /> {pontePrompt ? 'Cambiar planteamiento' : 'Obtener planteamiento aleatorio'}
+                <RefreshCw className="w-4 h-4" /> {pontePrompt ? 'Cambiar planteamiento' : 'Obtener planteamiento aleatorio'}
               </button>
-            )}
-
-            <div className="bg-stone-50 p-8 rounded-[32px] border border-stone-100 italic mt-8 whitespace-pre overflow-x-auto no-scrollbar">
-              <strong className="block mb-4 not-italic text-indigo-600 uppercase text-xs font-black tracking-widest">
-                Ejemplo de inspiración:
-              </strong>
-              {isPonte && pontePrompt?.example ? pontePrompt.example : activeChallenge.example}
             </div>
-          </div>
-
-          <ExamplesCarousel 
-            challengeId={activeChallenge.id} 
-            publications={publications} 
-            theme={theme} 
-            showExamples={showExamples} 
-            setShowExamples={setShowExamples} 
-          />
+          )}
 
           {(!isPonte || pontePrompt) && (
-            <WritingArea 
+            <WritingArea
               user={user}
               writingContent={writingContent}
               setWritingContent={setWritingContent}
@@ -1088,6 +988,23 @@ export default function App() {
               onLogin={handleLogin}
               theme={theme}
               maxWidth={activeChallenge.id === 'de-una-palabra-un-texto' ? '400px' : undefined}
+            />
+          )}
+
+          {example && (!isPonte || pontePrompt) && (
+            <section className={`mt-10 p-6 md:p-8 border ${theme === 'minimal' ? 'bg-white border-[#E8E6E0] rounded-[2px]' : 'bg-stone-50 border-stone-200 rounded-2xl'}`} aria-label="Ejemplo de inspiración">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#5A4A3A] mb-3">Ejemplo de inspiración</p>
+              <p className="font-editorial italic text-base md:text-lg leading-relaxed whitespace-pre-line">{example}</p>
+            </section>
+          )}
+
+          {(!isPonte || pontePrompt) && (
+            <ExamplesCarousel
+              challengeId={activeChallenge.id}
+              publications={publications}
+              theme={theme}
+              showExamples={showExamples}
+              setShowExamples={setShowExamples}
             />
           )}
         </div>

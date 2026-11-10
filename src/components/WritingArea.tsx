@@ -44,6 +44,8 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
   return (
     <div className={`mt-12 ${isMinimal ? '' : 'border-t pt-12'} ${maxWidth ? 'mx-auto w-full' : ''}`} style={maxWidth ? { maxWidth } : {}}>
       <div className="space-y-6">
+        {children}
+
         <div className="flex flex-col gap-2">
           <label htmlFor="pseudonym-input" className={`text-[10px] font-bold uppercase tracking-widest ${isMinimal ? 'text-[#5A4A3A] [font-variant:small-caps]' : 'opacity-40'}`}>
             {user ? 'Publicar como (Seudónimo opcional):' : 'Nombre o Seudónimo (Opcional):'}
@@ -61,8 +63,6 @@ export const WritingArea: React.FC<WritingAreaProps> = ({
             }`}
           />
         </div>
-
-        {children}
 
         <div className="flex flex-col gap-2">
           {textareaLabel && (
