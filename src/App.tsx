@@ -446,8 +446,7 @@ export default function App() {
         if (!stayInLab) setActiveLabTool(null);
         setWritingContent('');
         setPseudonym('');
-        if (isGuest) {
-          // Maybe show a message or just go home
+        if (isGuest && !stayInLab) {
           setView('home');
         }
       }, 2000);
