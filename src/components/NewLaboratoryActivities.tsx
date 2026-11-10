@@ -39,8 +39,8 @@ const ACTIVITY_COPY: Record<ActivityId, { title: string; description: string; pl
   },
   palabrandoimagenes: {
     title: 'Palabrando imágenes',
-    description: 'Mira la imagen e intenta describir lo que ves. Después, en un segundo párrafo, cuenta cómo lo ves: esa segunda mirada aparecerá en cursiva.',
-    placeholder: 'Describe primero lo que ves…\n\nY después, cómo lo ves: qué te sugiere, qué recuerdo despierta o qué historia intuyes…'
+    description: 'Mira la imagen e intenta describir lo que ves. Describir cómo lo ves es un reto añadido.',
+    placeholder: 'Describe lo que ves…\n\nComo reto añadido, describe también cómo lo ves: qué te sugiere, qué recuerdo despierta o qué historia intuyes…'
   }
 };
 
@@ -114,28 +114,27 @@ export const NewLaboratoryActivities: React.FC<NewLaboratoryActivitiesProps> = (
 
       <header className="text-center mb-10 md:mb-12">
         <h2 className={`${getLabActivityTitleClass(theme)} mb-4`}>{copy.title}</h2>
-        <p className={`max-w-3xl mx-auto text-sm md:text-base leading-relaxed ${isMinimal ? 'text-[#5A5040]' : 'opacity-70'}`}>{copy.description}</p>
+        <p className={`max-w-3xl mx-auto text-sm md:text-base leading-relaxed ${isMinimal ? 'text-[#5A5040]' : 'opacity-70'}`}>
+          {activityId === 'palabrandoimagenes' ? <>Mira la imagen e intenta describir lo que ves. Describir <em>cómo lo ves</em> es un reto añadido.</> : copy.description}
+        </p>
       </header>
 
       {activityId === 'palabrandoimagenes' && (
         <section className="mb-8">
-          <div className="bg-white border border-[#E8E6E0] p-3 md:p-4">
-            <img src={imageUrl} alt="Imagen aleatoria para inspirar la escritura" className="w-full max-h-[520px] object-cover" />
-            <div className="flex flex-wrap items-center justify-between gap-3 p-2">
-              <span className="text-[10px] uppercase tracking-widest text-[#8A8070]">Imagen aleatoria · Picsum Photos</span>
-              <button type="button" onClick={() => setImageSeed(Math.random().toString(36).slice(2, 11))} className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#0F5C52] hover:underline">
-                <RefreshCw className="w-3.5 h-3.5" /> Cambiar imagen
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-5 p-5 bg-white border border-[#E8E6E0]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] uppercase tracking-widest font-bold text-[#5A4A3A]">Emoción (opcional)</p>
-                <p className="mt-1 font-editorial text-xl">{emotion || 'Sin emoción'}</p>
+          <div className="grid grid-cols-1 md:grid-cols-[1.6fr_1fr] bg-white border border-[#E8E6E0]">
+            <div className="p-3 md:p-4 flex flex-col">
+              <img src={imageUrl} alt="Imagen aleatoria para inspirar la escritura" className="w-full flex-1 min-h-[240px] max-h-[520px] object-cover" />
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
+                <span className="text-[10px] uppercase tracking-widest text-[#8A8070]">Imagen aleatoria · Picsum Photos</span>
+                <button type="button" onClick={() => setImageSeed(Math.random().toString(36).slice(2, 11))} className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#0F5C52] hover:underline">
+                  <RefreshCw className="w-3.5 h-3.5" /> Cambiar imagen
+                </button>
               </div>
-              <div className="flex gap-2">
+            </div>
+            <div className="p-5 md:p-6 border-t md:border-t-0 md:border-l border-[#E8E6E0] flex flex-col justify-center">
+              <p className="text-[10px] uppercase tracking-widest font-bold text-[#5A4A3A]">Emoción (opcional)</p>
+              <p className="mt-2 font-editorial text-2xl">{emotion || 'Sin emoción'}</p>
+              <div className="flex flex-wrap gap-2 mt-5">
                 <button type="button" onClick={randomEmotion} className="inline-flex items-center gap-2 px-3 py-2 border border-[#C8C2B4] text-[10px] font-bold uppercase tracking-widest hover:bg-[#F7F4EE]">
                   <Shuffle className="w-3.5 h-3.5" /> Otra emoción
                 </button>
@@ -143,8 +142,8 @@ export const NewLaboratoryActivities: React.FC<NewLaboratoryActivitiesProps> = (
                   {emotion ? 'Quitar' : 'Sin emoción'}
                 </button>
               </div>
+              <p className="mt-4 text-[10px] text-[#8A8070]">Puedes conservarla, cambiarla o escribir sin una emoción sugerida.</p>
             </div>
-            <p className="mt-3 text-[10px] text-[#8A8070]">Puedes conservarla, cambiarla o escribir sin una emoción sugerida.</p>
           </div>
         </section>
       )}
