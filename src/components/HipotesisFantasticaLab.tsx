@@ -121,6 +121,8 @@ export const HipotesisFantasticaLab: React.FC<HipotesisFantasticaLabProps> = ({
               </button>
             </div>
 
+            <label className="block mb-2 text-[10px] font-bold uppercase tracking-widest text-[#5A4A3A]" htmlFor="fantastic-story-author">Firma o seudónimo</label>
+            <input id="fantastic-story-author" value={pseudonym} onChange={event => setPseudonym(event.target.value)} maxLength={80} placeholder={user?.displayName || 'Invitado'} className="w-full p-3 border border-[#C8C2B4] bg-white text-sm focus:outline-none focus:border-[#0F5C52]" />
             <label className="block mt-6 mb-2 text-[10px] font-bold uppercase tracking-widest text-[#5A4A3A]" htmlFor="fantastic-story">Tu historia</label>
             <textarea
               id="fantastic-story"
@@ -135,15 +137,6 @@ export const HipotesisFantasticaLab: React.FC<HipotesisFantasticaLabProps> = ({
               <span>La pregunta acompañará a tu texto en la galería.</span>
               <span>{story.length}/5000</span>
             </div>
-            <label className="block mt-5 mb-2 text-[10px] font-bold uppercase tracking-widest text-[#5A4A3A]" htmlFor="fantastic-story-author">Firma o seudónimo</label>
-            <input
-              id="fantastic-story-author"
-              value={pseudonym}
-              onChange={event => setPseudonym(event.target.value)}
-              maxLength={80}
-              placeholder={user?.displayName || 'Invitado'}
-              className="w-full p-3 border border-[#C8C2B4] bg-white text-sm focus:outline-none focus:border-[#0F5C52]"
-            />
             <div className="mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <p className="text-xs leading-relaxed text-[#6B6258]">Tu texto quedará pendiente de revisión antes de aparecer en la galería.</p>
               <button type="button" onClick={handleStorySubmit} disabled={!story.trim() || isPublishing} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0F5C52] text-white text-[10px] font-bold uppercase tracking-widest disabled:opacity-40 hover:bg-[#0B4A42]">
@@ -160,6 +153,8 @@ export const HipotesisFantasticaLab: React.FC<HipotesisFantasticaLabProps> = ({
                 <p className="text-sm text-[#6B6258]">Una buena hipótesis invita a imaginar, no a responder sí o no.</p>
               </div>
             </div>
+            <label className="block mb-2 mt-5 text-[10px] font-bold uppercase tracking-widest text-[#5A4A3A]" htmlFor="fantastic-proposal-author">Firma o seudónimo</label>
+            <input id="fantastic-proposal-author" value={pseudonym} onChange={event => setPseudonym(event.target.value)} maxLength={80} placeholder={user?.displayName || 'Invitado'} className="w-full p-3 border border-[#C8C2B4] bg-white text-sm focus:outline-none focus:border-[#0F5C52]" />
             <label className="block mb-2 text-[10px] font-bold uppercase tracking-widest text-[#5A4A3A]" htmlFor="fantastic-hypothesis">Tu hipótesis</label>
             <textarea
               id="fantastic-hypothesis"
@@ -174,15 +169,6 @@ export const HipotesisFantasticaLab: React.FC<HipotesisFantasticaLabProps> = ({
               <span>Debe ser una pregunta original y comprensible.</span>
               <span>{proposal.length}/280</span>
             </div>
-            <label className="block mt-5 mb-2 text-[10px] font-bold uppercase tracking-widest text-[#5A4A3A]" htmlFor="fantastic-proposal-author">Firma o seudónimo</label>
-            <input
-              id="fantastic-proposal-author"
-              value={pseudonym}
-              onChange={event => setPseudonym(event.target.value)}
-              maxLength={80}
-              placeholder={user?.displayName || 'Invitado'}
-              className="w-full p-3 border border-[#C8C2B4] bg-white text-sm focus:outline-none focus:border-[#0F5C52]"
-            />
             <div className="mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <p className="text-xs leading-relaxed text-[#6B6258]">Si se aprueba, la pregunta se incorporará al banco para futuras actividades.</p>
               <button type="button" onClick={handleProposalSubmit} disabled={!proposal.trim() || proposal.trim().length > 280 || isPublishing} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0F5C52] text-white text-[10px] font-bold uppercase tracking-widest disabled:opacity-40 hover:bg-[#0B4A42]">
