@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { getLabActivityTitleClass } from './labActivityStyles';
 import { User } from 'firebase/auth';
 import { CheckCircle2, Dices, ExternalLink, RefreshCw, ShieldCheck, XCircle } from 'lucide-react';
 import { WritingArea } from './WritingArea';
@@ -239,10 +240,7 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
   return (
     <div className={`max-w-4xl mx-auto p-4 md:p-6 ${isMinimal ? 'font-body text-[#1C1510]' : ''}`}>
       <header className="text-center mb-10 md:mb-12">
-        <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-3 ${isMinimal ? 'text-[#0F5C52]' : 'text-indigo-600'}`}>
-          Laboratorio de palabras · 10–15 min
-        </p>
-        <h2 className={`${isMinimal ? 'font-editorial text-[36px] md:text-[48px] leading-tight' : 'text-4xl md:text-5xl font-bold'} mb-4 ${isModern ? 'display text-indigo-600' : ''}`}>
+        <h2 className={`${getLabActivityTitleClass(theme)} mb-4`}>
           El binomio fantástico
         </h2>
         <p className={`max-w-2xl mx-auto italic text-sm md:text-base leading-relaxed ${isMinimal ? 'text-[#5A5040]' : 'opacity-60'}`}>
