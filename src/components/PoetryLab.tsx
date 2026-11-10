@@ -40,7 +40,7 @@ export const PoetryLab: React.FC<PoetryLabProps> = ({
         <p className="mt-4 text-[10px] uppercase tracking-widest opacity-40">
           Idea tomada de <a href="https://www.instagram.com/xinxetart/" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-100">Alba Muñoz</a>
         </p>
-      </div>
+      </header>
 
       <WritingArea 
         user={user}
