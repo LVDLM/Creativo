@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { HelpCircle, RefreshCw, Sparkles } from 'lucide-react';
-import HelpModal from './HelpModal';
+import { RefreshCw } from 'lucide-react';
 import RouletteWheel from './RouletteWheel';
 import { WORD_LIST } from './constants';
 import { motion } from 'framer-motion';
@@ -46,7 +45,6 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [finishedWheels, setFinishedWheels] = useState(0);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
     const shuffled = [...WORD_LIST].sort(() => 0.5 - Math.random());
@@ -167,27 +165,11 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
       />
 
       {/* Header */}
-      <header className="w-full max-w-5xl flex flex-col sm:flex-row justify-between items-center mb-8 md:mb-16 gap-6 z-10 relative">
-        <div className="flex items-center gap-4 md:gap-6">
-          <div className={`p-3 md:p-5 border-2 border-black transform -rotate-3 hover:rotate-0 transition-transform cursor-pointer group ${
-            isMinimal ? 'bg-[#F7F4EE] rounded-[2px]' : 'bg-indigo-600 rounded-[2rem] md:rounded-[2.5rem] shadow-[4px_4px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_rgba(0,0,0,1)]'
-          }`}>
-            <Sparkles className={`w-6 h-6 md:w-10 md:h-10 group-hover:scale-125 transition-transform ${isMinimal ? 'text-[#1C1510]' : 'text-white'}`} />
-          </div>
-          {renderSurrealTitle()}
-        </div>
-
-        <button 
-          onClick={() => setIsHelpOpen(true)}
-          className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 transition-all border-2 border-black ${
-            isMinimal 
-              ? 'bg-white hover:bg-[#F7F4EE] rounded-[2px] shadow-sm' 
-              : 'bg-white hover:bg-slate-50 rounded-2xl shadow-[4px_4px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1'
-          }`}
-        >
-          <span className={`text-sm font-black uppercase tracking-wider ${isMinimal ? 'text-[#1C1510] [font-variant:small-caps]' : 'text-slate-900'}`}>Ayuda</span>
-          <HelpCircle className={`w-5 h-5 ${isMinimal ? 'text-[#5A4A3A]' : 'text-indigo-600'}`} />
-        </button>
+      <header className="w-full max-w-5xl flex flex-col items-center text-center mb-10 md:mb-12 gap-3 z-10 relative">
+        {renderSurrealTitle()}
+        <p className={`max-w-2xl text-sm md:text-base leading-relaxed italic ${isMinimal ? 'text-[#5A5040]' : 'opacity-60'}`}>
+          Genera personajes absurdos y crea conversaciones imposibles entre objetos y conceptos.
+        </p>
       </header>
 
       {/* Main Content */}
@@ -279,7 +261,6 @@ export const SurrealDialogLab: React.FC<SurrealDialogLabProps> = ({
         />
       </div>
 
-      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes float {
