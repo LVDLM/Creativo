@@ -410,7 +410,7 @@ export default function App() {
     testConnection();
   }, []);
 
-  const handlePublish = async (labToolId?: string, contentOverride?: string, submissionType?: 'story' | 'hypothesis', promptContext?: string) => {
+  const handlePublish = async (labToolId?: string, contentOverride?: string, submissionType?: 'story' | 'hypothesis', promptContext?: string, extraMetadata?: Record<string, unknown>, stayInLab = false): Promise<boolean> => {
     const finalContent = contentOverride || writingContent;
     if ((!activeChallenge && !labToolId) || !finalContent.trim()) return;
     setIsPublishing(true);
@@ -436,6 +436,7 @@ export default function App() {
         });
       } catch (error) {
         handleFirestoreError(error, OperationType.CREATE, path);
+        return false;
       }
 
       setPublishSuccess(true);
@@ -450,8 +451,10 @@ export default function App() {
           setView('home');
         }
       }, 2000);
+      return true;
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'publications');
+      return false;
     } finally {
       setIsPublishing(false);
     }
