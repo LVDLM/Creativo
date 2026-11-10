@@ -240,9 +240,6 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
   return (
     <div className={`max-w-4xl mx-auto p-4 md:p-6 ${isMinimal ? 'font-body text-[#1C1510]' : ''}`}>
       <header className="text-center mb-10 md:mb-12">
-        <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-3 ${isMinimal ? 'text-[#0F5C52]' : 'text-indigo-600'}`}>
-          Laboratorio de palabras · 10–15 min
-        </p>
         <h2 className={`${getLabActivityTitleClass(theme)} mb-4`}>
           El binomio fantástico
         </h2>
