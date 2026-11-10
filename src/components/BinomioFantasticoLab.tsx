@@ -11,7 +11,7 @@ interface BinomioFantasticoLabProps {
   setWritingContent: (content: string) => void;
   pseudonym: string;
   setPseudonym: (pseudonym: string) => void;
-  onPublish: (content: string) => void;
+  onPublish: (content: string, wordPair: string) => void;
   isPublishing: boolean;
   publishSuccess: boolean;
   onLogin: () => void;
@@ -181,7 +181,8 @@ export const BinomioFantasticoLab: React.FC<BinomioFantasticoLabProps> = ({
       return;
     }
     onPublish(
-      `EL BINOMIO FANTÁSTICO · ${pair[0].word.toLocaleUpperCase('es')} + ${pair[1].word.toLocaleUpperCase('es')}\n\n${writingContent.trim()}`
+      writingContent.trim(),
+      `${pair[0].word} y ${pair[1].word}`
     );
   };
 
