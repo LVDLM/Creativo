@@ -412,7 +412,7 @@ export default function App() {
 
   const handlePublish = async (labToolId?: string, contentOverride?: string, submissionType?: 'story' | 'hypothesis', promptContext?: string, extraMetadata?: Record<string, unknown>, stayInLab = false): Promise<boolean> => {
     const finalContent = contentOverride || writingContent;
-    if ((!activeChallenge && !labToolId) || !finalContent.trim()) return;
+    if ((!activeChallenge && !labToolId) || !finalContent.trim()) return false;
     setIsPublishing(true);
     
     try {
