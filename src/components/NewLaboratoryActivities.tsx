@@ -12,7 +12,7 @@ interface NewLaboratoryActivitiesProps {
   pseudonym: string;
   setPseudonym: (value: string) => void;
   publications: Publication[];
-  onPublish: (content: string, metadata: Record<string, unknown>) => void;
+  onPublish: (content: string, metadata: Record<string, unknown>) => Promise<void> | void;
   isPublishing: boolean;
   publishSuccess: boolean;
   onLogin: () => void;
@@ -57,6 +57,7 @@ export const NewLaboratoryActivities: React.FC<NewLaboratoryActivitiesProps> = (
   const copy = ACTIVITY_COPY[activityId];
   const [content, setContent] = useState('');
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState('');
   const [imageSeed, setImageSeed] = useState(() => Math.random().toString(36).slice(2, 11));
   const [emotion, setEmotion] = useState<string | null>(() => {
     const groups = Object.values(EMOTIONS);
@@ -85,14 +86,19 @@ export const NewLaboratoryActivities: React.FC<NewLaboratoryActivitiesProps> = (
     setEmotion(all[Math.floor(Math.random() * all.length)]);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!content.trim() || isPublishing) return;
     const metadata = isDictionary
       ? { entryTerm }
       : { imageUrl, emotion: emotion || null };
-    onPublish(content.trim(), metadata);
-    setContent('');
-    if (activityId === 'palabrandoimagenes') setImageSeed(Math.random().toString(36).slice(2, 11));
+    setSubmitError('');
+    try {
+      await onPublish(content.trim(), metadata);
+      setContent('');
+      if (activityId === 'palabrandoimagenes') setImageSeed(Math.random().toString(36).slice(2, 11));
+    } catch {
+      setSubmitError('No se ha podido enviar la aportación. Tu texto sigue aquí para que puedas intentarlo de nuevo.');
+    }
   };
 
   const imageDescription = (value: string) => {
@@ -167,6 +173,7 @@ export const NewLaboratoryActivities: React.FC<NewLaboratoryActivitiesProps> = (
               {publishSuccess ? <><CheckCircle2 className="w-4 h-4" /> Enviado</> : <><Send className="w-4 h-4" /> {isPublishing ? 'Enviando…' : 'Enviar aportación'}</>}
             </button>
           </div>
+          {submitError && <p role="alert" className="text-sm text-red-700">{submitError}</p>}
           {!user && <p className="text-[10px] text-center text-[#8A8070]">Las aportaciones de invitados pasan por moderación antes de aparecer en el diccionario o la galería.</p>}
         </div>
       </section>
