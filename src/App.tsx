@@ -26,6 +26,7 @@ import { PoetryLab } from './components/PoetryLab';
 import { LipogramLab } from './components/LipogramLab';
 import { BinomioFantasticoLab } from './components/BinomioFantasticoLab';
 import { HipotesisFantasticaLab } from './components/HipotesisFantasticaLab';
+import { NewLaboratoryActivities } from './components/NewLaboratoryActivities';
 import { WritingArea } from './components/WritingArea';
 import { TimeChallenge } from './components/TimeChallenge';
 import { ExamplesCarousel } from './components/ExamplesCarousel';
@@ -75,13 +76,15 @@ import {
   Heart,
   X,
   XCircle,
-  Users
+  Users,
+  BookOpen,
+  Image
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // Icon mapping
 const ICON_MAP: Record<string, any> = {
-  Zap, Bus, Train, Type, Minimize2, Layers, Shuffle, Dices, Ghost, Search, Swords, Sun, Lightbulb, Sparkles, Clock, BarChart2, RefreshCw, Calendar, Layout, Palette, Sparkle, Heart
+  Zap, Bus, Train, Type, Minimize2, Layers, Shuffle, Dices, Ghost, Search, Swords, Sun, Lightbulb, Sparkles, Clock, BarChart2, RefreshCw, Calendar, Layout, Palette, Sparkle, Heart, BookOpen, Image
 };
 
 const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
@@ -241,6 +244,10 @@ export default function App() {
     labId: 'hipotesisfantastica',
     tags: ['Laboratorio', 'Imaginación', 'Narrativa']
   });
+
+  LAB_ACTIVITIES.push({ id: 'lab-diccionario-criaturlogico', title: 'Diccionario Criaturlógico', description: 'Inventa una criatura, ponle nombre y descríbela. Si quieres, añade también alguna leyenda.', difficulty: 'Variable', duration: '10–15 min', category: 'Laboratorio', icon: 'BookOpen', example: 'Una criatura imaginaria y su historia.', isLab: true, labId: 'diccionariocriaturlogico', tags: ['Laboratorio', 'Imaginación', 'Diccionario'] });
+  LAB_ACTIVITIES.push({ id: 'lab-emitologias', title: 'Emitologías', description: 'Elige una palabra e inventa por completo la historia de su origen.', difficulty: 'Variable', duration: '10 min', category: 'Laboratorio', icon: 'BookOpen', example: 'Una etimología apócrifa, sorprendente y convincente.', isLab: true, labId: 'emitologias', tags: ['Laboratorio', 'Palabras', 'Diccionario'] });
+  LAB_ACTIVITIES.push({ id: 'lab-palabrando-imagenes', title: 'Palabrando imágenes', description: 'Describe la imagen que aparece y cuenta, en cursiva, cómo la ves.', difficulty: 'Variable', duration: '10–15 min', category: 'Laboratorio', icon: 'Image', example: 'Una imagen, dos miradas: lo que aparece y lo que despierta.', isLab: true, labId: 'palabrandoimagenes', tags: ['Laboratorio', 'Imágenes', 'Emociones'] });
 
   const ALL_ACTIVITIES = [...LAB_ACTIVITIES, ...CHALLENGES];
 
@@ -424,7 +431,8 @@ export default function App() {
           ...(submissionType ? { submissionType } : {}),
           status: 'pending',
           isGuest: isGuest,
-          likesCount: 0
+          likesCount: 0,
+          ...(extraMetadata || {})
         });
       } catch (error) {
         handleFirestoreError(error, OperationType.CREATE, path);
@@ -433,9 +441,9 @@ export default function App() {
       setPublishSuccess(true);
       setTimeout(() => {
         setPublishSuccess(false);
-        if (!isGuest) setView(submissionType ? 'lab' : 'gallery');
+        if (!isGuest) setView(submissionType || stayInLab ? 'lab' : 'gallery');
         setActiveChallenge(null);
-        setActiveLabTool(null);
+        if (!stayInLab) setActiveLabTool(null);
         setWritingContent('');
         setPseudonym('');
         if (isGuest) {
@@ -1500,6 +1508,30 @@ export default function App() {
   const renderLab = () => {
     const isMinimal = theme === 'minimal';
 
+    if (['diccionariocriaturlogico', 'emitologias', 'palabrandoimagenes'].includes(activeLabTool || '')) {
+      const activityId = activeLabTool as 'diccionariocriaturlogico' | 'emitologias' | 'palabrandoimagenes';
+      const publicationId = activityId === 'diccionariocriaturlogico'
+        ? 'lab-diccionario-criaturlogico'
+        : activityId === 'emitologias' ? 'lab-emitologias' : 'lab-palabrando-imagenes';
+      return (
+        <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          <NewLaboratoryActivities
+            activityId={activityId}
+            theme={theme}
+            user={user}
+            pseudonym={pseudonym}
+            setPseudonym={setPseudonym}
+            publications={publications}
+            onPublish={(content, metadata) => handlePublish(publicationId, content, undefined, undefined, metadata, true)}
+            isPublishing={isPublishing}
+            publishSuccess={publishSuccess}
+            onLogin={handleLogin}
+            onBack={() => { setActiveLabTool(null); setWritingContent(''); }}
+          />
+        </div>
+      );
+    }
+
     if (activeLabTool === 'hipotesisfantastica') {
       return (
         <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
@@ -1903,6 +1935,22 @@ export default function App() {
                 Próximamente
               </button>
             </motion.div>
+
+            {[
+              { id: 'diccionariocriaturlogico', title: 'Diccionario Criaturlógico', description: 'Inventa criaturas, bautízalas y crea el diccionario fantástico de la comunidad.', icon: BookOpen },
+              { id: 'emitologias', title: 'Emitologías', description: 'Inventa el origen de las palabras y consulta las etimologías creadas por otros.', icon: BookOpen },
+              { id: 'palabrandoimagenes', title: 'Palabrando imágenes', description: 'Deja que una imagen aleatoria despierte una descripción y una segunda mirada.', icon: Image }
+            ].map(activity => (
+              <motion.div key={activity.id} whileHover={{ y: -5 }} onClick={() => setActiveLabTool(activity.id)}
+                className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] hover:border-[#8F8E88]' : 'card'} p-10 flex flex-col items-center text-center group cursor-pointer transition-all`}>
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+                  <activity.icon className="w-10 h-10" />
+                </div>
+                <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>{activity.title}</h3>
+                <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>{activity.description}</p>
+                <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>Abrir Herramienta</button>
+              </motion.div>
+            ))}
 
             <div className={`md:col-span-2 p-8 md:p-12 ${isMinimal ? 'bg-white border border-[#C8C2B4] rounded-[2px]' : 'card bg-indigo-600/5 border-dashed border-2 border-indigo-200'}`}>
               <div className="max-w-2xl mx-auto flex flex-col items-center text-center">
