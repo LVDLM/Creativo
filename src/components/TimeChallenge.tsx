@@ -222,15 +222,6 @@ export const TimeChallenge: React.FC<TimeChallengeProps> = ({
           </div>
 
           <div className="space-y-4">
-            <textarea
-              value={writingContent}
-              onChange={(e) => setWritingContent(e.target.value)}
-              placeholder="Escribe rápido, el tiempo vuela..."
-              className="w-full h-64 p-8 border-[#C8C2B4] bg-white focus:border-[#1C1510] font-editorial text-lg leading-[1.8] rounded-lg text-[#1C1510] resize-none shadow-inner"
-              autoFocus
-            />
-            
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex flex-col gap-1 w-full md:w-auto">
                 <label htmlFor="time-challenge-pseudonym" className="text-[10px] font-bold uppercase tracking-widest text-[#5A4A3A]">Seudónimo (Opcional):</label>
                 <input
@@ -243,6 +234,15 @@ export const TimeChallenge: React.FC<TimeChallengeProps> = ({
                 />
               </div>
 
+            <textarea
+              value={writingContent}
+              onChange={(e) => setWritingContent(e.target.value)}
+              placeholder="Escribe rápido, el tiempo vuela..."
+              className="w-full h-64 p-8 border-[#C8C2B4] bg-white focus:border-[#1C1510] font-editorial text-lg leading-[1.8] rounded-lg text-[#1C1510] resize-none shadow-inner"
+              autoFocus
+            />
+            
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <button
                 disabled={isPublishing || !writingContent.trim()}
                 onClick={() => handleNextChallenge()}
