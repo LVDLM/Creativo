@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { User } from 'firebase/auth';
-import { BookOpen, RefreshCw, Image as ImageIcon, Shuffle, Send, CheckCircle2, LogIn } from 'lucide-react';
+import { RefreshCw, Shuffle, Send, CheckCircle2, LogIn } from 'lucide-react';
 import { Publication } from '../types';
 import { getLabActivityTitleClass } from './labActivityStyles';
 
@@ -46,7 +46,7 @@ const ACTIVITY_COPY: Record<ActivityId, { title: string; description: string; pl
 
 const normalizeInitial = (value: string) => {
   const first = value.trim().charAt(0).toLocaleUpperCase('es');
-  return first.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return first === 'Ñ' ? 'Ñ' : first.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 };
 
 export const NewLaboratoryActivities: React.FC<NewLaboratoryActivitiesProps> = ({
@@ -67,7 +67,6 @@ export const NewLaboratoryActivities: React.FC<NewLaboratoryActivitiesProps> = (
   const imageUrl = `https://picsum.photos/seed/ponte-${imageSeed}/1100/700`;
   const isDictionary = activityId !== 'palabrandoimagenes';
   const entryTerm = content.split('\n')[0].trim();
-  const challengeId = `lab-${activityId.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
   const storedChallengeId = activityId === 'diccionariocriaturlogico'
     ? 'lab-diccionario-criaturlogico'
     : activityId === 'emitologias' ? 'lab-emitologias' : 'lab-palabrando-imagenes';
