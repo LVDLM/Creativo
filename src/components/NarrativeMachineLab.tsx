@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { User } from 'firebase/auth';
-import { Dices, Minus, Plus, RefreshCw } from 'lucide-react';
+import { Minus, Plus, RefreshCw } from 'lucide-react';
 import { getLabActivityTitleClass } from './labActivityStyles';
 import { WritingArea } from './WritingArea';
 import {
@@ -168,7 +168,9 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
     const state = active
       ? (isMinimal ? 'bg-[#0F5C52] border-[#0F5C52] text-white' : 'bg-indigo-600 border-indigo-600 text-white')
       : (isMinimal ? 'bg-white border-[#C8C2B4] text-[#5A5040] hover:bg-[#EDE8DF]' : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50');
-    return `flex-1 border px-2 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F5C52] ${shape} ${state}`;
+    // El ancho disponible depende de la tarjeta (@container), no de la pantalla:
+    // con poco espacio los botones se apilan y con más se colocan en fila.
+    return `min-w-0 whitespace-nowrap border px-1 py-2 text-[10px] font-bold uppercase tracking-normal transition-colors @min-[7.5rem]:flex-1 @min-[10rem]:px-2 @min-[10rem]:tracking-wider focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F5C52] ${shape} ${state}`;
   };
 
   const renderOption = (option: MachineOption, key: string) => (
@@ -198,7 +200,7 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
     return (
       <article
         key={id}
-        className={`relative min-w-0 border p-3 md:p-4 flex flex-col ${isMinimal ? 'bg-[#F7F4EE] border-[#C8C2B4] rounded-[2px]' : 'bg-stone-50 border-stone-200 rounded-2xl'} ${isLocked ? (isMinimal ? 'border-[#0F5C52]' : 'border-indigo-300') : ''}`}
+        className={`relative min-w-0 border p-2.5 md:p-4 flex flex-col ${isMinimal ? 'bg-[#F7F4EE] border-[#C8C2B4] rounded-[2px]' : 'bg-stone-50 border-stone-200 rounded-2xl'} ${isLocked ? (isMinimal ? 'border-[#0F5C52]' : 'border-indigo-300') : ''}`}
       >
         <h4 className="mb-2 text-center text-[10px] font-bold uppercase tracking-[0.18em] opacity-60">
           {column.title}
@@ -224,13 +226,15 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
           </span>
         </button>
 
-        <div role="group" aria-label={`Qué hacer con la condición ${column.title}`} className="mt-3 flex gap-1">
-          <button type="button" onClick={() => setMode(id, false)} aria-pressed={!isLocked} className={modeButton(!isLocked)}>
-            Sortear
-          </button>
-          <button type="button" onClick={() => setMode(id, true)} aria-pressed={isLocked} className={modeButton(isLocked)}>
-            Fijar
-          </button>
+        <div className="@container mt-3">
+          <div role="group" aria-label={`Qué hacer con la condición ${column.title}`} className="flex flex-col gap-1 @min-[7.5rem]:flex-row">
+            <button type="button" onClick={() => setMode(id, false)} aria-pressed={!isLocked} className={modeButton(!isLocked)}>
+              Sortear
+            </button>
+            <button type="button" onClick={() => setMode(id, true)} aria-pressed={isLocked} className={modeButton(isLocked)}>
+              Fijar
+            </button>
+          </div>
         </div>
       </article>
     );
@@ -250,7 +254,7 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
         </p>
       </header>
 
-      <section className={`p-5 md:p-7 border mb-6 ${isMinimal ? 'bg-white border-[#C8C2B4] rounded-[2px]' : 'bg-white border-stone-200 rounded-2xl'}`} aria-labelledby="maquina-heading">
+      <section className={`p-3 sm:p-5 md:p-7 border mb-6 ${isMinimal ? 'bg-white border-[#C8C2B4] rounded-[2px]' : 'bg-white border-stone-200 rounded-2xl'}`} aria-labelledby="maquina-heading">
         <div className="flex items-center gap-3 mb-5">
           <span className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${isMinimal ? 'bg-[#EDE8DF]' : 'bg-indigo-50'}`}>1</span>
           <div>
@@ -303,13 +307,13 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
             disabled={isRolling || rollableIds.length === 0}
             className={`shrink-0 inline-flex items-center justify-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider disabled:opacity-50 ${isMinimal ? 'bg-[#0F5C52] text-white rounded-[2px] hover:bg-[#0B4A42]' : 'bg-indigo-600 text-white rounded-full hover:bg-indigo-700'}`}
           >
-            {isRolling ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Dices className="w-4 h-4" />}
-            {isRolling ? 'La máquina gira…' : 'Girar la máquina'}
+            {isRolling && <RefreshCw className="w-4 h-4 animate-spin" />}
+            {isRolling ? 'Activando…' : '¡Activar!'}
           </button>
         </div>
       </section>
 
-      <section className={`p-5 md:p-7 border ${isMinimal ? 'bg-white border-[#C8C2B4] rounded-[2px]' : 'bg-white border-stone-200 rounded-2xl'}`} aria-labelledby="maquina-write-heading">
+      <section className={`p-3 sm:p-5 md:p-7 border ${isMinimal ? 'bg-white border-[#C8C2B4] rounded-[2px]' : 'bg-white border-stone-200 rounded-2xl'}`} aria-labelledby="maquina-write-heading">
         <div className="flex items-center gap-3 mb-4">
           <span className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${isMinimal ? 'bg-[#EDE8DF]' : 'bg-indigo-50'}`}>2</span>
           <div>
