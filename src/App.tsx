@@ -25,6 +25,7 @@ import { SurrealDialogLab } from './components/surreal_dialog/SurrealDialogLab';
 import { PoetryLab } from './components/PoetryLab';
 import { LipogramLab } from './components/LipogramLab';
 import { BinomioFantasticoLab } from './components/BinomioFantasticoLab';
+import { NarrativeMachineLab } from './components/NarrativeMachineLab';
 import { HipotesisFantasticaLab } from './components/HipotesisFantasticaLab';
 import { NewLaboratoryActivities } from './components/NewLaboratoryActivities';
 import { WritingArea } from './components/WritingArea';
@@ -229,6 +230,20 @@ export default function App() {
     isLab: true,
     labId: 'binomiofantastico',
     tags: ['Laboratorio', 'Palabras', 'Narrativa']
+  });
+
+  LAB_ACTIVITIES.push({
+    id: 'lab-maquina-narradora',
+    title: 'La máquina narradora',
+    description: 'Sortea cómo contar tu historia: tipo de narrador, persona gramatical, protagonista y antagonista. Fija las condiciones que te gusten y sortea de nuevo las demás.',
+    difficulty: 'Variable',
+    duration: '10–15 min',
+    category: 'Laboratorio',
+    icon: 'Dices',
+    example: 'Un narrador testigo, en primera persona, cuenta la historia de una gaviota y un reloj implacable.',
+    isLab: true,
+    labId: 'maquinanarradora',
+    tags: ['Laboratorio', 'Narrador', 'Narrativa']
   });
 
   LAB_ACTIVITIES.push({
@@ -1181,7 +1196,7 @@ export default function App() {
   };
 
   const renderGallery = () => {
-    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says', 'lab-lipograma', 'lab-binomio-fantastico', 'lab-hipotesis-fantastica', 'lab-diccionario-criaturlogico', 'lab-emitologias', 'lab-palabrando-imagenes'];
+    const labToolIds = ['lab-micro-story', 'lab-weather-action', 'lab-surreal-dialog', 'lab-poetry-says', 'lab-lipograma', 'lab-binomio-fantastico', 'lab-maquina-narradora', 'lab-hipotesis-fantastica', 'lab-diccionario-criaturlogico', 'lab-emitologias', 'lab-palabrando-imagenes'];
     const isMinimal = theme === 'minimal';
     
     // Determine type for filtering
@@ -1306,6 +1321,7 @@ export default function App() {
                   'lab-surreal-dialog': 'Diálogos Surrealistas',
                   'lab-poetry-says': 'En poesía se dice...',
                   'lab-binomio-fantastico': 'El binomio fantástico',
+                  'lab-maquina-narradora': 'La máquina narradora',
                   'lab-hipotesis-fantastica': 'La hipótesis fantástica',
                   'lab-diccionario-criaturlogico': 'Diccionario Criaturlógico',
                   'lab-emitologias': 'Emitologías',
@@ -1376,6 +1392,7 @@ export default function App() {
                 'lab-weather-action': 'Tiempo y Acciones',
                 'lab-surreal-dialog': 'Diálogos Surrealistas',
                 'lab-poetry-says': 'En poesía se dice...',
+                'lab-maquina-narradora': 'La máquina narradora',
                 'lab-diccionario-criaturlogico': 'Diccionario Criaturlógico',
                 'lab-emitologias': 'Emitologías',
                 'lab-palabrando-imagenes': 'Palabrando imágenes'
@@ -1653,6 +1670,45 @@ export default function App() {
             <div className="max-w-4xl mx-auto">
               <ExamplesCarousel
                 challengeId="lab-binomio-fantastico"
+                publications={publications}
+                theme={theme}
+                showExamples={showExamples}
+                setShowExamples={setShowExamples}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeLabTool === 'maquinanarradora') {
+      return (
+        <div className={`min-h-screen ${isMinimal ? 'bg-[#F7F4EE] font-body text-[#1C1510]' : ''}`}>
+          <div className="max-w-6xl mx-auto px-6 py-12">
+            <button
+              onClick={() => {
+                setActiveLabTool(null);
+                setWritingContent('');
+              }}
+              className={`mb-8 flex items-center gap-2 transition-opacity font-bold uppercase text-[10px] tracking-widest ${isMinimal ? 'text-[#5A4A3A] hover:text-[#1C1510] [font-variant:small-caps]' : 'opacity-40 hover:opacity-100'}`}
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" /> Volver al Laboratorio
+            </button>
+            <NarrativeMachineLab
+              theme={theme}
+              user={user}
+              writingContent={writingContent}
+              setWritingContent={setWritingContent}
+              pseudonym={pseudonym}
+              setPseudonym={setPseudonym}
+              onPublish={(content, summary) => handlePublish('lab-maquina-narradora', content, undefined, summary ? `La máquina narradora (${summary})` : 'La máquina narradora')}
+              isPublishing={isPublishing}
+              publishSuccess={publishSuccess}
+              onLogin={handleLogin}
+            />
+            <div className="max-w-4xl mx-auto">
+              <ExamplesCarousel
+                challengeId="lab-maquina-narradora"
                 publications={publications}
                 theme={theme}
                 showExamples={showExamples}
@@ -1957,6 +2013,21 @@ export default function App() {
               </div>
               <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>El binomio fantástico</h3>
               <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Une dos palabras inesperadas y conviértelas en una historia. Puedes cambiar cada palabra o generar una pareja nueva.</p>
+              <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
+                Abrir Herramienta
+              </button>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -5 }}
+              onClick={() => setActiveLabTool('maquinanarradora')}
+              className={`${isMinimal ? 'bg-white border border-[#E8E6E0] rounded-[2px] hover:border-[#8F8E88]' : 'card'} p-10 flex flex-col items-center text-center group cursor-pointer transition-all`}
+            >
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-500 ${isMinimal ? 'bg-[#EDE8DF] text-[#1C1510]' : theme === 'modern' ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-700'}`}>
+                <Dices className="w-10 h-10" />
+              </div>
+              <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>La máquina narradora</h3>
+              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Sortea el narrador, la persona, el protagonista y el antagonista de tu historia. Fija lo que te guste y sortea de nuevo el resto.</p>
               <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
                 Abrir Herramienta
               </button>
