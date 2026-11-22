@@ -41,9 +41,13 @@ const PERSONS: MachineOption[] = [
   { id: 'p3', label: '3.ª persona', hint: '«Salió de casa antes del amanecer.»' }
 ];
 
-const buildCharacters = (prefix: string, groups: Record<'Humano' | 'Animal' | 'Inanimado', string[]>): MachineOption[] =>
-  (Object.keys(groups) as Array<keyof typeof groups>).flatMap((type) =>
-    groups[type].map((example) => ({
+/**
+ * Cada tipo de personaje aporta el mismo número de ejemplos, para que todos los
+ * tipos tengan la misma probabilidad de salir. Los ejemplos son solo una sugerencia.
+ */
+const buildCharacters = (prefix: string, groups: Record<string, string[]>): MachineOption[] =>
+  Object.entries(groups).flatMap(([type, examples]) =>
+    examples.map((example) => ({
       id: `${prefix}-${type.toLowerCase()}-${example}`,
       label: type,
       hint: example
@@ -75,8 +79,14 @@ const ANTAGONISTS = buildCharacters('ant', {
     'un enjambre de avispas', 'una serpiente', 'un perro guardián', 'una rata de alcantarilla', 'un lobo cansado'
   ],
   Inanimado: [
-    'un cerrojo atascado', 'una niebla densa', 'un despertador', 'una escalera sin fin', 'una puerta que no se abre',
-    'un teléfono que suena', 'un espejo mentiroso', 'una tormenta', 'el calendario', 'un reloj implacable'
+    'un cerrojo atascado', 'un despertador', 'una escalera sin fin', 'una puerta que no se abre', 'un teléfono que suena',
+    'un espejo mentiroso', 'un reloj implacable', 'un ascensor averiado', 'una cremallera atascada', 'una balanza trucada'
+  ],
+  // Fuerzas sin cuerpo que se oponen al protagonista (conflicto contra el destino,
+  // la naturaleza, la sociedad o uno mismo). Solo se ofrecen como antagonistas.
+  'Fuerza abstracta': [
+    'el paso del tiempo', 'la culpa', 'el olvido', 'el miedo a no ser suficiente', 'una promesa incumplida',
+    'la soledad', 'uno mismo', 'la tormenta', 'la niebla', 'el destino'
   ]
 });
 

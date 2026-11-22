@@ -252,6 +252,9 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
         <p className={`max-w-2xl mx-auto italic text-sm md:text-base leading-relaxed ${isMinimal ? 'text-[#5A5040]' : 'opacity-60'}`}>
           Deja que la máquina decida cómo se cuenta tu historia: quién narra, desde qué persona y quiénes se enfrentan. Fija lo que te guste y deja que la máquina sortee el resto.
         </p>
+        <p className={`max-w-2xl mx-auto mt-3 text-xs md:text-sm leading-relaxed ${isMinimal ? 'text-[#5A5040]' : 'opacity-60'}`}>
+          Lo que aparece en cursiva bajo cada carrete es solo una sugerencia: un ejemplo o una explicación de ese tipo de narrador, de persona o de personaje. Lo que cuenta es el tipo (por ejemplo, «Animal» o «Fuerza abstracta»); el personaje concreto lo eliges tú.
+        </p>
       </header>
 
       <section className={`p-3 sm:p-5 md:p-7 border mb-6 ${isMinimal ? 'bg-white border-[#C8C2B4] rounded-[2px]' : 'bg-white border-stone-200 rounded-2xl'}`} aria-labelledby="maquina-heading">
@@ -259,7 +262,7 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
           <span className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${isMinimal ? 'bg-[#EDE8DF]' : 'bg-indigo-50'}`}>1</span>
           <div>
             <h3 id="maquina-heading" className="font-bold text-lg">Tus condiciones</h3>
-            <p className="text-[11pt] leading-relaxed opacity-70">Pulsa un carrete para cambiar solo esa condición, o gira la máquina entera.</p>
+            <p className="text-[11pt] leading-relaxed opacity-70">Pulsa un carrete para cambiar solo esa condición, o pulsa «¡Activar!» para sortear todas las que no estén fijadas.</p>
           </div>
         </div>
 
