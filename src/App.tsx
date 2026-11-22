@@ -235,7 +235,7 @@ export default function App() {
   LAB_ACTIVITIES.push({
     id: 'lab-maquina-narradora',
     title: 'La máquina narradora',
-    description: 'Sortea cómo contar tu historia: tipo de narrador, persona gramatical, protagonista y antagonista. Fija las condiciones que te gusten y deja libres las demás.',
+    description: 'Sortea cómo contar tu historia: tipo de narrador, persona gramatical, protagonista y antagonista. Fija las condiciones que te gusten y sortea de nuevo las demás.',
     difficulty: 'Variable',
     duration: '10–15 min',
     category: 'Laboratorio',
@@ -2027,7 +2027,7 @@ export default function App() {
                 <Dices className="w-10 h-10" />
               </div>
               <h3 className={`text-3xl font-bold mb-4 ${isMinimal ? 'font-editorial' : theme === 'modern' ? 'display' : ''}`}>La máquina narradora</h3>
-              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Sortea el narrador, la persona, el protagonista y el antagonista de tu historia. Fija lo que te guste y deja libre el resto.</p>
+              <p className={`mb-8 max-w-sm ${isMinimal ? 'text-[#5A5040] text-sm leading-relaxed' : 'opacity-60'}`}>Sortea el narrador, la persona, el protagonista y el antagonista de tu historia. Fija lo que te guste y sortea de nuevo el resto.</p>
               <button className={`${isMinimal ? 'bg-[#1C1510] text-[#F7F4EE] px-8 py-3 rounded-[2px] font-bold text-[12px] tracking-[0.06em]' : 'olive-button'}`}>
                 Abrir Herramienta
               </button>

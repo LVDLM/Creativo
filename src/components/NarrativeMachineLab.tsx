@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { User } from 'firebase/auth';
-import { Dices, Lock, LockOpen, Minus, Plus, RefreshCw } from 'lucide-react';
+import { Dices, Minus, Plus, RefreshCw } from 'lucide-react';
 import { getLabActivityTitleClass } from './labActivityStyles';
 import { WritingArea } from './WritingArea';
 import {
@@ -75,7 +75,6 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
 }) => {
   const [selection, setSelection] = useState<Selection>(() => drawAll());
   const [reels, setReels] = useState<Reels>(() => makeReels(selection));
-  const [enabled, setEnabled] = useState<Flags>(() => makeFlags(true));
   const [locked, setLocked] = useState<Flags>(() => makeFlags(false));
   const [showExtras, setShowExtras] = useState(false);
   const timersRef = useRef<Partial<Record<ColumnId, number>>>({});
@@ -84,7 +83,8 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
   const isModern = theme === 'modern';
 
   const visibleColumns = MACHINE_COLUMNS.filter((column) => !column.optional || showExtras);
-  const activeIds = visibleColumns.filter((column) => enabled[column.id]).map((column) => column.id);
+  // Toda columna visible forma parte de la consigna; «Fijar» solo decide si cambia al girar.
+  const activeIds = visibleColumns.map((column) => column.id);
   const rollableIds = activeIds.filter((id) => !locked[id]);
   const isRolling = ALL_IDS.some((id) => reels[id].rolling);
 
@@ -142,23 +142,8 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
     });
   };
 
-  const toggleEnabled = (id: ColumnId) => {
-    if (isRolling) return;
-    const nowEnabled = !enabled[id];
-    setEnabled((prev) => ({ ...prev, [id]: nowEnabled }));
-    if (nowEnabled) {
-      // Al volver a activar una columna se le da un valor nuevo, para no imponer uno antiguo.
-      const next = drawColumns(selection, [id], [...activeIds, id]);
-      setSelection(next);
-      setResting(next, [id]);
-    } else {
-      setLocked((prev) => ({ ...prev, [id]: false }));
-    }
-  };
-
-  const toggleLocked = (id: ColumnId) => {
-    if (isRolling || !enabled[id]) return;
-    setLocked((prev) => ({ ...prev, [id]: !prev[id] }));
+  const setMode = (id: ColumnId, isLocked: boolean) => {
+    setLocked((prev) => ({ ...prev, [id]: isLocked }));
   };
 
   const toggleExtras = () => {
@@ -167,7 +152,6 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
       const next = drawColumns(selection, EXTRA_IDS, [...activeIds, ...EXTRA_IDS]);
       setSelection(next);
       setResting(next, EXTRA_IDS);
-      setEnabled((prev) => ({ ...prev, tiempo: true, espacio: true }));
       setLocked((prev) => ({ ...prev, tiempo: false, espacio: false }));
     }
     setShowExtras((value) => !value);
@@ -179,7 +163,13 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
   };
 
   const textColor = isMinimal ? 'text-[#1C1510]' : isModern ? 'text-indigo-700' : 'text-stone-800';
-  const smallButton = 'inline-flex items-center gap-1 px-2 py-1 font-bold disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F5C52]';
+  const modeButton = (active: boolean) => {
+    const shape = isMinimal ? 'rounded-[2px]' : 'rounded-full';
+    const state = active
+      ? (isMinimal ? 'bg-[#0F5C52] border-[#0F5C52] text-white' : 'bg-indigo-600 border-indigo-600 text-white')
+      : (isMinimal ? 'bg-white border-[#C8C2B4] text-[#5A5040] hover:bg-[#EDE8DF]' : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50');
+    return `flex-1 border px-2 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F5C52] ${shape} ${state}`;
+  };
 
   const renderOption = (option: MachineOption, key: string) => (
     <span
@@ -202,7 +192,6 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
   const renderColumn = (id: ColumnId) => {
     const column = MACHINE_COLUMNS.find((item) => item.id === id)!;
     const reel = reels[id];
-    const isEnabled = enabled[id];
     const isLocked = locked[id];
     const current = selection[id];
 
@@ -215,57 +204,32 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
           {column.title}
         </h4>
 
-        {isEnabled ? (
-          <button
-            type="button"
-            onClick={() => startRoll([id])}
-            disabled={isRolling || isLocked}
-            aria-label={`${column.title}: ${describe(id, current)}. ${isLocked ? 'Fijada.' : 'Pulsa para cambiar solo esta condición.'}`}
-            className="block w-full overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0F5C52] disabled:cursor-default"
-            style={{ height: ROW_H }}
+        <button
+          type="button"
+          onClick={() => startRoll([id])}
+          disabled={isRolling || isLocked}
+          aria-label={`${column.title}: ${describe(id, current)}. ${isLocked ? 'Fijada.' : 'Pulsa para cambiar solo esta condición.'}`}
+          className="block w-full overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0F5C52] disabled:cursor-default"
+          style={{ height: ROW_H }}
+        >
+          <span
+            className="flex w-full flex-col"
+            style={{
+              transform: `translate3d(0, -${reel.rolling ? (reel.strip.length - 1) * ROW_H : 0}px, 0)`,
+              transition: reel.rolling ? `transform ${reel.duration}ms cubic-bezier(0.16, 1, 0.3, 1)` : 'none'
+            }}
+            aria-hidden="true"
           >
-            <span
-              className="flex w-full flex-col"
-              style={{
-                transform: `translate3d(0, -${reel.rolling ? (reel.strip.length - 1) * ROW_H : 0}px, 0)`,
-                transition: reel.rolling ? `transform ${reel.duration}ms cubic-bezier(0.16, 1, 0.3, 1)` : 'none'
-              }}
-              aria-hidden="true"
-            >
-              {reel.strip.map((option, index) => renderOption(option, `${option.id}-${index}`))}
-            </span>
-          </button>
-        ) : (
-          <div
-            className="flex w-full flex-col items-center justify-center px-2 text-center opacity-50"
-            style={{ height: ROW_H }}
-          >
-            <span className="font-editorial text-lg font-bold">Libre</span>
-            <span className="mt-1 text-[11px] italic">Esta condición la decides tú.</span>
-          </div>
-        )}
+            {reel.strip.map((option, index) => renderOption(option, `${option.id}-${index}`))}
+          </span>
+        </button>
 
-        <div className="mt-3 flex items-center justify-between gap-2 text-[10px] uppercase tracking-wider">
-          <label className={`inline-flex items-center gap-1.5 ${isRolling ? 'cursor-wait' : 'cursor-pointer'}`}>
-            <input
-              type="checkbox"
-              checked={isEnabled}
-              onChange={() => toggleEnabled(id)}
-              disabled={isRolling}
-              className="h-4 w-4 accent-[#0F5C52]"
-            />
+        <div role="group" aria-label={`Qué hacer con la condición ${column.title}`} className="mt-3 flex gap-1">
+          <button type="button" onClick={() => setMode(id, false)} aria-pressed={!isLocked} className={modeButton(!isLocked)}>
             Sortear
-          </label>
-          <button
-            type="button"
-            onClick={() => toggleLocked(id)}
-            disabled={!isEnabled || isRolling}
-            aria-pressed={isLocked}
-            aria-label={`${isLocked ? 'Soltar' : 'Fijar'} la condición ${column.title}`}
-            className={`${smallButton} ${isLocked ? 'text-[#0F5C52]' : 'opacity-70 hover:opacity-100'}`}
-          >
-            {isLocked ? <Lock className="w-3.5 h-3.5" /> : <LockOpen className="w-3.5 h-3.5" />}
-            {isLocked ? 'Fijada' : 'Fijar'}
+          </button>
+          <button type="button" onClick={() => setMode(id, true)} aria-pressed={isLocked} className={modeButton(isLocked)}>
+            Fijar
           </button>
         </div>
       </article>
@@ -282,7 +246,7 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
           La máquina narradora
         </h2>
         <p className={`max-w-2xl mx-auto italic text-sm md:text-base leading-relaxed ${isMinimal ? 'text-[#5A5040]' : 'opacity-60'}`}>
-          Deja que la máquina decida cómo se cuenta tu historia: quién narra, desde qué persona y quiénes se enfrentan. Sortea solo lo que quieras y fija lo que te guste.
+          Deja que la máquina decida cómo se cuenta tu historia: quién narra, desde qué persona y quiénes se enfrentan. Fija lo que te guste y deja que la máquina sortee el resto.
         </p>
       </header>
 
@@ -306,7 +270,7 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
         )}
 
         <p className="sr-only" role="status" aria-live="polite">
-          {isRolling ? '' : summaryParts.length ? `Tus condiciones: ${summaryParts.join(', ')}.` : 'No hay ninguna condición sorteada.'}
+          {isRolling ? '' : `Tus condiciones: ${summaryParts.join(', ')}.`}
         </p>
 
         {unusualCombination && (
@@ -329,7 +293,7 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
             </button>
             {rollableIds.length === 0 && (
               <span className="text-[11px] opacity-60">
-                {activeIds.length === 0 ? 'Marca «Sortear» en alguna columna.' : 'Todas las condiciones están fijadas.'}
+                Todas las condiciones están fijadas. Pulsa «Sortear» en alguna para volver a girar.
               </span>
             )}
           </div>
@@ -351,9 +315,7 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
           <div>
             <h3 id="maquina-write-heading" className="font-bold text-lg">Escribe tu historia</h3>
             <p className="text-[11pt] leading-relaxed opacity-70">
-              {summaryParts.length
-                ? `Tu consigna: ${summaryParts.join(' · ')}.`
-                : 'Sin condiciones sorteadas: escribe con total libertad.'}
+              Tu consigna: {summaryParts.join(' · ')}.
             </p>
           </div>
         </div>
@@ -377,7 +339,7 @@ export const NarrativeMachineLab: React.FC<NarrativeMachineLabProps> = ({
       </section>
 
       <p className="mt-5 text-center text-[11px] leading-relaxed opacity-50">
-        Las condiciones son una invitación, no un examen: la actividad no comprueba el texto. «Fijar» conserva una condición al girar; desmarcar «Sortear» la deja libre.
+        Las condiciones son una invitación, no un examen: la actividad no comprueba el texto. En cada condición, «Sortear» hace que cambie al girar la máquina y «Fijar» la conserva. Todas las condiciones visibles forman parte de tu consigna.
       </p>
     </div>
   );
